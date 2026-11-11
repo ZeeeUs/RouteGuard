@@ -19,8 +19,10 @@
 Выполните на роутере от root:
 
 ```sh
-installer=$(wget -O - https://github.com/ZeeeUs/RouteGuard/releases/latest/download/install.sh) && printf '%s\n' "$installer" | sh
+sh <(wget -O - https://raw.githubusercontent.com/ZeeeUs/RouteGuard/refs/heads/main/install.sh)
 ```
+
+Скрипт скачивает готовые APK из GitHub Releases, сверяет контрольные суммы и устанавливает пакеты.
 
 ## Первый запуск
 

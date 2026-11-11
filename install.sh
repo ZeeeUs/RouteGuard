@@ -21,7 +21,7 @@ arch=$(cat /etc/apk/arch) || fail "could not identify the OpenWrt package archit
 
 case "$distribution:$version:$target:$arch" in
   OpenWrt:25.12.*:mediatek/filogic:aarch64_cortex-a53) ;;
-  *) fail "no release build for $distribution $version ($target, $arch); build from source" ;;
+  *) fail "no release build for $distribution $version ($target, $arch)" ;;
 esac
 
 umask 077
@@ -30,13 +30,24 @@ trap 'rm -rf "$tmp"' EXIT
 trap 'exit 1' HUP INT TERM
 cd "$tmp"
 
-release=https://github.com/ZeeeUs/RouteGuard/releases/latest/download
+api=https://api.github.com/repos/ZeeeUs/RouteGuard/releases
 engine=routeguard-$arch.apk
 ui=luci-app-routeguard.apk
 
+# Resolve all assets from one release and use API downloads for OpenWrt wget.
+wget -q -T 30 -O release.json "$api/latest" || fail "could not read the latest GitHub release"
+tag=$(jsonfilter -i release.json -e '@.tag_name') || fail "invalid GitHub release response"
+[ -n "$tag" ] || fail "GitHub release has no tag"
+printf 'Downloading prebuilt RouteGuard %s packages for %s.\n' "$tag" "$arch"
+
 download() {
-  wget -T 30 -O "$1" "$release/$1" \
-    || fail "could not download $1 from the latest published release"
+  asset_id=$(jsonfilter -i release.json -e "@.assets[@.name=\"$1\"].id") \
+    || fail "could not find $1 in release $tag"
+  case "$asset_id" in
+    '' | *[!0-9]*) fail "could not find a unique $1 in release $tag" ;;
+  esac
+  wget -q -T 30 --header='Accept: application/octet-stream' -O "$1" "$api/assets/$asset_id" \
+    || fail "could not download $1 from release $tag"
 }
 
 download SHA256SUMS
