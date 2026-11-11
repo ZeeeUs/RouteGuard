@@ -1,0 +1,7 @@
+package 'routeguard'
+config settings 'main'
+	option enabled '1'
+	list wan_device 'pppoe-wan'
+config service
+	option label 'Alice'\''s # service'
+	list domain 'example.org'

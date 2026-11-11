@@ -1,0 +1,54 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: routeguard/src/go.mod
+          cache: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "lts/*"
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit
+      - name: Check generated mocks
+        run: |
+          make generate
+          git diff --exit-code -- routeguard/src
+          test -z "$(git ls-files --others --exclude-standard -- routeguard/src)"
+      - run: make check
+      - name: Go race detector and coverage
+        working-directory: routeguard/src
+        run: |
+          mkdir -p ../../build
+          go test -race -coverprofile=../../build/coverage.out ./...
+
+  kernel:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: routeguard/src/go.mod
+          cache: false
+      - run: make integration TARGET_ARCH=amd64
+      - run: make resources TARGET_ARCH=amd64
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: integration-and-resources
+          path: |
+            build/*.json
+            build/*.rss

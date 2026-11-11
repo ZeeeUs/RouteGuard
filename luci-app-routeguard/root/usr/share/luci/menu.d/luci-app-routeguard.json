@@ -1,0 +1,8 @@
+{
+  "admin/services/routeguard": {
+    "title": "RouteGuard",
+    "order": 60,
+    "action": { "type": "view", "path": "routeguard/overview" },
+    "depends": { "acl": ["luci-app-routeguard"] }
+  }
+}

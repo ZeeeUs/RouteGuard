@@ -1,0 +1,15 @@
+{
+  "printWidth": 100,
+  "tabWidth": 2,
+  "plugins": ["prettier-plugin-sh"],
+  "overrides": [
+    {
+      "files": [
+        "routeguard/files/routeguard.init",
+        "routeguard/files/routeguard.hotplug",
+        "luci-app-routeguard/root/usr/libexec/rpcd/luci.routeguard"
+      ],
+      "options": { "parser": "sh" }
+    }
+  ]
+}

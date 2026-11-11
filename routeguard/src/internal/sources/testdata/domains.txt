@@ -1,0 +1,7 @@
+﻿# independent list
+Example.ORG.
+domain:example.org
+full:api.example.org # note
+full:metrics.example.org @telemetry
+include:another-list
+regexp:example

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# A normal boot restores saved addresses before networking. If sysupgrade or a
+# manual deletion left only enabled UCI settings, retry recovery when WAN is up.
+[ "$ACTION" = ifup ] || exit 0
+[ -f /etc/routeguard/state.json ] && exit 0
+/usr/sbin/routeguard recover < /dev/null > /dev/null 2>&1 &

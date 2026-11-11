@@ -1,0 +1,26 @@
+#!/bin/sh
+
+case "$1:$2" in
+  list:)
+    printf '%s\n' '{"status":{},"apply":{},"refresh":{},"rollback":{},"job":{"id":"String"}}'
+    ;;
+  call:status)
+    exec /usr/sbin/routeguard status
+    ;;
+  call:apply | call:refresh | call:rollback)
+    exec /usr/sbin/routeguard queue "$2"
+    ;;
+  call:job)
+    . /usr/share/libubox/jshn.sh
+    read -r request
+    json_load "$request" || exit 1
+    json_get_var id id
+    case "$id" in
+      '' | *[!a-z0-9-]*) exit 1 ;;
+    esac
+    exec /usr/sbin/routeguard job "$id"
+    ;;
+  *)
+    exit 1
+    ;;
+esac

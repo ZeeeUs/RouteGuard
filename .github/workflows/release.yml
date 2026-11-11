@@ -1,0 +1,78 @@
+name: Release OpenWrt APKs
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    uses: ./.github/workflows/check.yml
+
+  build:
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: routeguard/src/go.mod
+          cache: false
+
+      - name: Test the engine
+        working-directory: routeguard/src
+        env:
+          GOTOOLCHAIN: local
+        run: go test ./...
+
+      - name: Check package versions
+        run: |
+          engine=$(sed -n 's/^PKG_VERSION:=//p' routeguard/Makefile)
+          ui=$(sed -n 's/^PKG_VERSION:=//p' luci-app-routeguard/Makefile)
+          [[ "$engine" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && "$engine" == "$ui" ]]
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
+            test "$GITHUB_REF_NAME" = "v$engine"
+          fi
+
+      - name: Install SDK host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential file gawk gettext libncurses-dev \
+            libssl-dev python3 python3-setuptools rsync unzip wget zlib1g-dev zstd
+
+      - name: Build and check both APKs
+        run: sh scripts/build-sdk.sh "$RUNNER_TEMP/openwrt-sdk" "$RUNNER_TEMP/dist"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: openwrt-release
+          path: ${{ runner.temp }}/dist/
+          if-no-files-found: error
+          compression-level: 0
+
+  publish:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: openwrt-release
+          path: dist
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --generate-notes --latest \
+            dist/install.sh dist/SHA256SUMS dist/routeguard-aarch64_cortex-a53.apk dist/luci-app-routeguard.apk

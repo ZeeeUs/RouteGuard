@@ -1,0 +1,28 @@
+{
+  "active": {
+    "nft": "table inet routeguard {\n set blocked4 { type ipv4_addr; flags interval; auto-merge; elements = { 192.0.2.10/32 }; }\n chain forward { type filter hook forward priority -1; policy accept;\n  oifname { \"wan\" } ip daddr @blocked4 counter drop comment \"forward4\"\n }\n chain output { type filter hook output priority -1; policy accept;\n  oifname { \"wan\" } ip daddr @blocked4 counter drop comment \"output4\"\n }\n}\n",
+    "ipv6": "off",
+    "services": [],
+    "updated": "",
+    "update_minute": ""
+  },
+  "previous": null,
+  "paused": false,
+  "config": [
+    {
+      "enabled": "1",
+      "wan_device": [
+        "pppoe-wan"
+      ]
+    },
+    [
+      {
+        "label": "Alice's # service",
+        "domain": [
+          "example.org"
+        ],
+        "preset": "removed"
+      }
+    ]
+  ]
+}

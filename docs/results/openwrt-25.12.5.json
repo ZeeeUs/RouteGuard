@@ -1,0 +1,34 @@
+{
+  "tested_utc": "2026-11-11T09:31:33.764471+00:00",
+  "openwrt": "25.12.5",
+  "target": "mediatek/filogic",
+  "package_architecture": "aarch64_cortex-a53",
+  "environment": "Official OpenWrt root filesystem in a network-isolated Linux ARM64 container; Docker kernel, no physical router or full procd boot",
+  "rootfs_source": "https://downloads.openwrt.org/releases/25.12.5/targets/mediatek/filogic/openwrt-25.12.5-mediatek-filogic-glinet_gl-mt6000-squashfs-sysupgrade.bin",
+  "rootfs_sha256": "4b506982cc4ae2e1ebdee85be637fdfd59ed7df83e9995e03ffd641c58954390",
+  "nft": "1.1.6",
+  "apk": "3.0.5",
+  "go": "1.27.4",
+  "packaged_binary_bytes": 6797464,
+  "packaged_payload_bytes": 6807604,
+  "packages": {
+    "luci-app-routeguard.apk": {
+      "bytes": 4800,
+      "sha256": "56e24617eed0c625ea2aafb4d5bceb28a006b93ece29cce8d803b354dfed5e2e"
+    },
+    "routeguard-aarch64_cortex-a53.apk": {
+      "bytes": 2759087,
+      "sha256": "b754c431270e56f5677525ef24ff93915ee6a0418efc506ffff142ac69e48f5c"
+    }
+  },
+  "checks": [
+    "install both APKs with existing OpenWrt runtime dependencies",
+    "blank UCI configuration and no saved rules after installation",
+    "init enabled and executable RPC/hotplug files",
+    "apply with native UCI and nftables",
+    "RPC status, queue acceptance and result by job ID",
+    "detect and repair an emptied chain",
+    "sysupgrade keep list includes state and recovery journal",
+    "remove both APKs and their active firewall table"
+  ]
+}

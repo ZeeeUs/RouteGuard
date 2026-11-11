@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+
+START=18
+STOP=89
+
+start() {
+  /usr/sbin/routeguard restore
+}
+
+stop() {
+  /usr/sbin/routeguard stop
+}
+
+reload() {
+  /usr/sbin/routeguard apply
+}

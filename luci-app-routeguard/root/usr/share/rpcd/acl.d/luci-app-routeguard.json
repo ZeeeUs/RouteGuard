@@ -1,0 +1,18 @@
+{
+  "luci-app-routeguard": {
+    "description": "Configure RouteGuard and read its status",
+    "read": {
+      "uci": ["routeguard"],
+      "ubus": {
+        "luci.routeguard": ["status", "job"]
+      }
+    },
+    "write": {
+      "uci": ["routeguard"],
+      "ubus": {
+        "luci.routeguard": ["apply", "refresh", "rollback"],
+        "uci": ["commit"]
+      }
+    }
+  }
+}

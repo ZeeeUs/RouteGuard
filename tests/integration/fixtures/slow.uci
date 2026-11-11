@@ -1,0 +1,9 @@
+config settings 'main'
+	option enabled '1'
+	option ipv6 'off'
+	option dns '127.0.0.1'
+	list wan_device 'wan'
+
+config service 'slow'
+	option enabled '1'
+	list domain 'example.org'

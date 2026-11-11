@@ -1,0 +1,13 @@
+{
+  "name": "routeguard-development",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:ui": "node --test tests/ui/*.test.cjs"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "prettier-plugin-sh": "0.20.2"
+  }
+}

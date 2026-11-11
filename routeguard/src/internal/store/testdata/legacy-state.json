@@ -1,0 +1,21 @@
+{
+  "active": null,
+  "previous": null,
+  "paused": false,
+  "config": [
+    {
+      "enabled": "1",
+      "wan_device": [
+        "pppoe-wan"
+      ]
+    },
+    [
+      {
+        "label": "Alice's # service",
+        "domain": [
+          "example.org"
+        ]
+      }
+    ]
+  ]
+}
