@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=routeguard
-PKG_VERSION:=0.2.0
+PKG_VERSION:=$(or $(ROUTEGUARD_VERSION),0.0.0)
 PKG_RELEASE:=1
 PKG_LICENSE:=GPL-2.0-only
 

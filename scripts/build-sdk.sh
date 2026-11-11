@@ -4,7 +4,19 @@ set -eu
 repo=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 sdk=${1:?provide a writable SDK directory}
 dist=${2:?provide an output directory}
+tag=${3-}
 . "$repo/scripts/sdk.env"
+
+version=0.0.0
+if [ -n "$tag" ]; then
+  if ! printf '%s\n' "$tag" | awk 'NR != 1 || $0 !~ /^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/ { exit 1 }'; then
+    printf 'Invalid release tag "%s". Expected vMAJOR.MINOR.PATCH.\n' "$tag" >&2
+    exit 1
+  fi
+  version=${tag#v}
+fi
+export ROUTEGUARD_VERSION="$version"
+printf 'Building RouteGuard packages with version %s\n' "$version"
 
 mkdir -p "$sdk" "$dist"
 sdk=$(CDPATH='' cd -- "$sdk" && pwd)
@@ -49,10 +61,13 @@ make -j1 package/routeguard-local/routeguard/compile NO_DEPS=1 V=s
 make -j1 package/routeguard-local/luci-app-routeguard/compile NO_DEPS=1 CONFIG_LUCI_CSSTIDY= V=s
 
 for package in routeguard luci-app-routeguard; do
-  version=$(sed -n 's/^PKG_VERSION:=//p' "$repo/$package/Makefile")
   release=$(sed -n 's/^PKG_RELEASE:=//p' "$repo/$package/Makefile")
-  matches=$(find bin/packages -type f -name "$package-$version-r$release.apk")
-  [ "$(printf '%s\n' "$matches" | wc -l)" -eq 1 ] && [ -f "$matches" ]
+  filename="$package-$version-r$release.apk"
+  matches=$(find bin/packages -type f -name "$filename")
+  if [ "$(printf '%s\n' "$matches" | wc -l)" -ne 1 ] || [ ! -f "$matches" ]; then
+    printf 'Expected exactly one built APK named %s.\n' "$filename" >&2
+    exit 1
+  fi
   asset="$package.apk"
   if [ "$package" = routeguard ]; then
     case "$matches" in */aarch64_cortex-a53/*) ;; *) exit 1 ;; esac

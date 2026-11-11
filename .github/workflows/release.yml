@@ -32,15 +32,6 @@ jobs:
           GOTOOLCHAIN: local
         run: go test ./...
 
-      - name: Check package versions
-        run: |
-          engine=$(sed -n 's/^PKG_VERSION:=//p' routeguard/Makefile)
-          ui=$(sed -n 's/^PKG_VERSION:=//p' luci-app-routeguard/Makefile)
-          [[ "$engine" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ && "$engine" == "$ui" ]]
-          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
-            test "$GITHUB_REF_NAME" = "v$engine"
-          fi
-
       - name: Install SDK host dependencies
         run: |
           sudo apt-get update
@@ -48,7 +39,9 @@ jobs:
             libssl-dev python3 python3-setuptools rsync unzip wget zlib1g-dev zstd
 
       - name: Build and check both APKs
-        run: sh scripts/build-sdk.sh "$RUNNER_TEMP/openwrt-sdk" "$RUNNER_TEMP/dist"
+        env:
+          ROUTEGUARD_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: sh scripts/build-sdk.sh "$RUNNER_TEMP/openwrt-sdk" "$RUNNER_TEMP/dist" "$ROUTEGUARD_TAG"
 
       - uses: actions/upload-artifact@v7
         with:

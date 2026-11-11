@@ -1,6 +1,6 @@
 include $(TOPDIR)/rules.mk
 
-PKG_VERSION:=0.2.0
+PKG_VERSION:=$(or $(ROUTEGUARD_VERSION),0.0.0)
 PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI for RouteGuard
