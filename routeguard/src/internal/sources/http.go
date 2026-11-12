@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
@@ -53,6 +54,11 @@ func download(ctx context.Context, client *http.Client, raw string) (DomainSet, 
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, 0, fmt.Errorf("download from %s: HTTP %d", u.Hostname(), resp.StatusCode)
+	}
+
+	mediaType, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type"))
+	if mediaType == "text/html" || mediaType == "application/xhtml+xml" {
+		return nil, 0, fmt.Errorf("list from %s is an HTML page; use the direct HTTPS link to the raw file", u.Hostname())
 	}
 
 	if resp.ContentLength > MaxSourceBytes {

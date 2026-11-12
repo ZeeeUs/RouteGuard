@@ -1,29 +1,40 @@
 "use strict";
 "require baseclass";
 "require form";
+"require tools.widgets as widgets";
 
 function createSettingsContent(section) {
-  let o = section.option(form.Flag, "enabled", _("Enable RouteGuard"));
+  let o = section.option(form.Flag, "enabled", _("Block direct connections"));
   o.rmempty = true;
 
   o = section.option(
-    form.DynamicList,
+    widgets.DeviceSelect,
     "wan_device",
-    _("Linux WAN devices"),
-    _("Use actual outgoing devices such as pppoe-wan. Add each uplink, including IPv6 uplinks."),
+    _("Internet uplink devices"),
+    _(
+      "Select the devices used to connect to the Internet, for example wan or pppoe-wan. You can select several uplinks or enter a device name manually if it is temporarily absent.",
+    ),
   );
+  o.multiple = true;
+  o.noaliases = true;
+  o.noinactive = false;
+  o.nocreate = false;
+  o.rmempty = true;
   o.validate = function (section_id, value) {
-    if (!value || /^[A-Za-z0-9_][A-Za-z0-9_.:-]{0,14}$/.test(value)) {
+    const devices = Array.isArray(value) ? value : value ? [value] : [];
+    if (devices.every((device) => /^[A-Za-z0-9_][A-Za-z0-9_.:-]{0,14}$/.test(device))) {
       return true;
     }
-    return _("Enter a Linux device name.");
+    return _("Enter an outgoing device name, for example wan or pppoe-wan.");
   };
 
   o = section.option(
     form.Value,
     "dns",
-    _("Resolver IP"),
-    _("Required for domains and remote lists. Leave empty for IP-only rules."),
+    _("DNS server IP address"),
+    _(
+      "DNS server used to find real IP addresses for domains. Required for domain lists; leave empty for IP-only profiles.",
+    ),
   );
   o.datatype = "ipaddr(1)";
 
@@ -52,16 +63,15 @@ function createSettingsContent(section) {
 }
 
 function createServiceContent(section) {
-  let o = section.option(form.Flag, "enabled", _("Enabled"));
+  let o = section.option(form.Flag, "enabled", _("Protect this profile"));
   o.rmempty = true;
-  section.option(form.Value, "label", _("Name"));
 
   section.option(
     form.DynamicList,
     "url",
     _("Remote HTTPS domain lists"),
     _(
-      "Use one hostname per line. Optional domain: and full: prefixes are accepted. Tagged entries and include directives are skipped.",
+      "Use a direct HTTPS link to a text file. On GitHub, copy the Raw link. Use one hostname per line. Optional domain: and full: prefixes are accepted. Tagged entries and include directives are skipped.",
     ),
   );
 

@@ -68,12 +68,15 @@ func run(ctx context.Context, engine *app.App, args []string) error {
 	if len(args) == 1 {
 		switch args[0] {
 		case "status":
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetIndent("", "  ")
+
 			status, err := engine.Status(ctx)
 			if err != nil {
-				return json.NewEncoder(os.Stdout).Encode(map[string]string{"error": err.Error()})
+				return encoder.Encode(map[string]string{"error": err.Error()})
 			}
 
-			return json.NewEncoder(os.Stdout).Encode(status)
+			return encoder.Encode(status)
 		case "apply", "refresh", "restore", "rollback", "stop", "recover":
 			message, err := engine.Execute(ctx, args[0])
 			if err == nil {

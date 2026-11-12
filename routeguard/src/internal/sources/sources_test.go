@@ -58,6 +58,22 @@ func TestDownloadRejectsRedirect(t *testing.T) {
 	}
 }
 
+func TestDownloadRejectsHTMLPage(t *testing.T) {
+	client := newHTTPClient()
+	transport := mock.NewMockRoundTripper(gomock.NewController(t))
+	client.Transport = transport
+	transport.EXPECT().RoundTrip(gomock.Any()).Return(&http.Response{
+		StatusCode: http.StatusOK,
+		Header:     http.Header{"Content-Type": {"text/html; charset=utf-8"}},
+		Body:       io.NopCloser(strings.NewReader(sourceFixture)),
+	}, nil)
+
+	_, _, err := download(context.Background(), client, "https://example.org/list")
+	if err == nil || !strings.Contains(err.Error(), "use the direct HTTPS link to the raw file") {
+		t.Fatalf("expected an actionable HTML error, got %v", err)
+	}
+}
+
 func TestDNSAddresses(t *testing.T) {
 	v4 := netip.MustParseAddr("160.79.104.10")
 	got, err := resolvedPrefixes("example.org", []netip.Addr{

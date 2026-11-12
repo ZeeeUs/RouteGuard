@@ -54,6 +54,10 @@ return baseclass.extend({
     await map.save(null, true);
     await commit("routeguard");
 
+    // Committing can change the IDs of anonymous UCI sections.
+    map.data.unload("routeguard");
+    await map.render();
+
     // Commit only this package. Unrelated pending LuCI changes stay pending.
     const [, operation] = await Promise.all([ui.changes.init().catch(() => {}), this.run("apply")]);
     return operation;

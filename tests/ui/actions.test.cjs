@@ -39,7 +39,16 @@ function fixture(overrides = {}) {
     { changes: { init: async () => {} } },
     (value) => value,
   );
-  const map = { save: async () => events.push("save") };
+  const map = {
+    save: async () => events.push("save"),
+    data: {
+      unload: (config) => {
+        assert.equal(config, "routeguard");
+        events.push("unload");
+      },
+    },
+    render: async () => events.push("render"),
+  };
   return { actions, map, events };
 }
 
@@ -47,7 +56,39 @@ test("Save & Apply saves, commits and waits for its own operation", async () => 
   const { actions, map, events } = fixture();
   const result = await actions.saveAndApply(map);
   assert.equal(result.state, "ok");
-  assert.deepEqual(events, ["save", "commit", "queue", "result"]);
+  assert.deepEqual(events, ["save", "commit", "unload", "render", "queue", "result"]);
+});
+
+test("a failed apply leaves the committed section available for another save", async () => {
+  let committedID = "cfg035996";
+  let cachedID = committedID;
+  let jobs = 0;
+  const { actions, map } = fixture({
+    commit: async () => {
+      committedID = "cfg025996";
+    },
+    job: async (id) => {
+      jobs++;
+      return jobs === 1
+        ? { id, state: "error", message: "list download failed" }
+        : { id, state: "ok" };
+    },
+  });
+
+  map.save = async () => {
+    if (cachedID !== committedID) {
+      throw new Error("uci/set: Resource not found");
+    }
+  };
+  map.data.unload = () => {
+    cachedID = null;
+  };
+  map.render = async () => {
+    cachedID ??= committedID;
+  };
+
+  await assert.rejects(actions.saveAndApply(map), /list download failed/);
+  assert.equal((await actions.saveAndApply(map)).state, "ok");
 });
 
 test("form validation failure never commits or applies", async () => {

@@ -1,0 +1,14 @@
+{
+  "loaded": true,
+  "table_present": true,
+  "ipv6": "off",
+  "devices": ["wan"],
+  "default_route_devices": { "-4": ["wan"], "-6": [] },
+  "missing_devices": [],
+  "services": [
+    { "id": "@service[0]", "label": "Example", "domains": 19, "ipv4": 2, "ipv6": 0, "skipped": 2 }
+  ],
+  "counters": { "forward4": { "packets": 6, "bytes": 384 } },
+  "schedule": { "minute": "0", "installed": true, "running": true, "enabled": true },
+  "job": { "action": "refresh", "state": "error", "message": "Download failed" }
+}

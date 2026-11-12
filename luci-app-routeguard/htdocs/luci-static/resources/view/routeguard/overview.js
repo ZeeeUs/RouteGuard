@@ -3,6 +3,7 @@
 "require form";
 "require ui";
 "require routeguard.form as fields";
+"require routeguard.profiles as profiles";
 "require routeguard.status as status";
 "require routeguard.actions as actions";
 
@@ -18,7 +19,7 @@ return view.extend({
     this.map = map;
 
     fields.settings(map.section(form.NamedSection, "main", "settings", _("Settings")));
-    const services = map.section(form.TypedSection, "service", _("Services"));
+    const services = map.section(profiles, "service", _("Protection profiles"));
     services.anonymous = true;
     services.addremove = true;
     fields.services(services);
