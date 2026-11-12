@@ -11,6 +11,7 @@ package mock
 
 import (
 	context "context"
+	netip "net/netip"
 	reflect "reflect"
 
 	config "github.com/ZeeeUs/RouteGuard/internal/config"
@@ -344,4 +345,42 @@ func (m *MockScheduler) Update(arg0 context.Context, arg1 string) error {
 func (mr *MockSchedulerMockRecorder) Update(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Update", reflect.TypeOf((*MockScheduler)(nil).Update), arg0, arg1)
+}
+
+// MockProber is a mock of Prober interface.
+type MockProber struct {
+	ctrl     *gomock.Controller
+	recorder *MockProberMockRecorder
+	isgomock struct{}
+}
+
+// MockProberMockRecorder is the mock recorder for MockProber.
+type MockProberMockRecorder struct {
+	mock *MockProber
+}
+
+// NewMockProber creates a new mock instance.
+func NewMockProber(ctrl *gomock.Controller) *MockProber {
+	mock := &MockProber{ctrl: ctrl}
+	mock.recorder = &MockProberMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockProber) EXPECT() *MockProberMockRecorder {
+	return m.recorder
+}
+
+// Connect mocks base method.
+func (m *MockProber) Connect(arg0 context.Context, arg1 string, arg2 netip.Addr) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Connect", arg0, arg1, arg2)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Connect indicates an expected call of Connect.
+func (mr *MockProberMockRecorder) Connect(arg0, arg1, arg2 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Connect", reflect.TypeOf((*MockProber)(nil).Connect), arg0, arg1, arg2)
 }

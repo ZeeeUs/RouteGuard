@@ -13,7 +13,8 @@ const source = fs.readFileSync(
 function fixture() {
   const events = [];
   const values = {};
-  const profile = new Function("form", "ui", "E", "_", source)(
+  const profile = new Function("baseclass", "form", "ui", "E", "_", source)(
+    { extend: (value) => value },
     { TypedSection: { extend: (value) => value } },
     { createHandlerFn: (context, fn) => fn.bind(context) },
     (tag, attrs, children) => ({
@@ -27,7 +28,7 @@ function fixture() {
       },
     }),
     (value) => value,
-  );
+  ).ProfileSection;
   profile.sectiontype = "service";
   profile.map = {
     config: "routeguard",
@@ -82,4 +83,41 @@ test("existing anonymous profiles keep their label as a text heading", () => {
   );
   assert.equal(nodes[0].children[0].tag, "h3");
   assert.deepEqual(nodes[0].children[0].children, ["Existing profile"]);
+});
+
+// LuCI instantiates the class returned by a module without arguments.
+// Form sections must be instantiated later, by Map.section(), with their map.
+test("module loading does not construct a form section before its map exists", () => {
+  class Base {
+    static extend(properties) {
+      class Extended extends this {}
+      Object.assign(Extended.prototype, properties);
+      return Extended;
+    }
+  }
+  let constructions = 0;
+  class TypedSection extends Base {
+    constructor(map, sectiontype) {
+      super();
+      this.config = map.config;
+      this.map = map;
+      this.sectiontype = sectiontype;
+      constructions++;
+    }
+  }
+  const Module = new Function("baseclass", "form", "ui", "E", "_", source)(
+    Base,
+    { TypedSection },
+    {},
+    () => {},
+    (value) => value,
+  );
+  const loaded = new Module();
+  assert.equal(constructions, 0);
+  assert.equal(typeof loaded.ProfileSection, "function");
+  const map = { config: "routeguard" };
+  const section = new loaded.ProfileSection(map, "service");
+  assert.equal(section.map, map);
+  assert.equal(section.sectiontype, "service");
+  assert.equal(constructions, 1);
 });

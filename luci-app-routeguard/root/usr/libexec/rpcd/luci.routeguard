@@ -2,12 +2,12 @@
 
 case "$1:$2" in
   list:)
-    printf '%s\n' '{"status":{},"apply":{},"refresh":{},"rollback":{},"job":{"id":"String"}}'
+    printf '%s\n' '{"status":{},"diagnose":{},"apply":{},"refresh":{},"rollback":{},"job":{"id":"String"}}'
     ;;
   call:status)
     exec /usr/sbin/routeguard status
     ;;
-  call:apply | call:refresh | call:rollback)
+  call:apply | call:refresh | call:rollback | call:diagnose)
     exec /usr/sbin/routeguard queue "$2"
     ;;
   call:job)

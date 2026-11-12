@@ -73,6 +73,7 @@ func (c Compiler) Compile(ctx context.Context, cfg *config.Config) (*Snapshot, e
 	}
 
 	return &Snapshot{
+		ProbeTargets: items.probeTargets(targets, exempt),
 		Plan:         Plan{Devices: slices.Compact(devices), Targets: targets, Exempt: exempt},
 		IPv6:         cfg.Settings.IPv6,
 		Services:     items.summaries,
@@ -213,4 +214,31 @@ func (items *collection) finish() ([]netip.Prefix, error) {
 	}
 
 	return SortPrefixes(targets), nil
+}
+
+// Keep at most one host address per family and profile. Never pick arbitrary
+// hosts from manual CIDR ranges or send diagnostics to tunnel exceptions.
+func (items *collection) probeTargets(targets, exempt []netip.Prefix) map[string][]netip.Addr {
+	result := make(map[string][]netip.Addr)
+
+	// Reuse the sorted policy targets instead of allocating another address list.
+	for _, prefix := range targets {
+		addr := prefix.Addr()
+		if prefix.Bits() != addr.BitLen() || slices.ContainsFunc(exempt, func(p netip.Prefix) bool { return p.Contains(addr) }) {
+			continue
+		}
+
+		for index, summary := range items.summaries {
+			if items.targets[prefix]&(1<<index) == 0 {
+				continue
+			}
+
+			previous := result[summary.ID]
+			if !slices.ContainsFunc(previous, func(p netip.Addr) bool { return p.Is4() == addr.Is4() }) {
+				result[summary.ID] = append(previous, addr)
+			}
+		}
+	}
+
+	return result
 }

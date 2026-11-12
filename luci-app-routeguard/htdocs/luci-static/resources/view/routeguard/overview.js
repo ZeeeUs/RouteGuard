@@ -4,7 +4,6 @@
 "require ui";
 "require routeguard.form as fields";
 "require routeguard.profiles as profiles";
-"require routeguard.status as status";
 "require routeguard.actions as actions";
 
 return view.extend({
@@ -19,13 +18,14 @@ return view.extend({
     this.map = map;
 
     fields.settings(map.section(form.NamedSection, "main", "settings", _("Settings")));
-    const services = map.section(profiles, "service", _("Protection profiles"));
+
+    const services = map.section(profiles.ProfileSection, "service", _("Protection profiles"));
     services.anonymous = true;
     services.addremove = true;
     fields.services(services);
 
     const formNode = await map.render();
-    return E("div", {}, [formNode, status.create(map.readonly)]);
+    return formNode;
   },
 
   handleSaveApply: async function () {

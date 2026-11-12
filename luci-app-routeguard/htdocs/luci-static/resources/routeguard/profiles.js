@@ -1,8 +1,9 @@
 "use strict";
+"require baseclass";
 "require form";
 "require ui";
 
-return form.TypedSection.extend({
+const ProfileSection = form.TypedSection.extend({
   renderContents: function (ids, nodes) {
     const titled = nodes.map((node, index) =>
       E("div", {}, [
@@ -54,3 +55,5 @@ return form.TypedSection.extend({
     return E("div", { class: "cbi-section-create" }, [name, " ", add]);
   },
 });
+
+return baseclass.extend({ ProfileSection });

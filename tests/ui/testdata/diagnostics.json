@@ -1,0 +1,30 @@
+{
+  "time": "2026-11-12T07:30:01Z",
+  "checks": [
+    {
+      "profile": "Blocked",
+      "device": "wan",
+      "address": "192.0.2.1",
+      "result": "drop_observed",
+      "packets": 2,
+      "detail": "Shared counter increased"
+    },
+    {
+      "profile": "Reachable",
+      "device": "wan",
+      "address": "192.0.2.2",
+      "result": "reachable",
+      "packets": 0,
+      "detail": "TCP connected"
+    },
+    {
+      "profile": "Uncertain",
+      "device": "wan",
+      "address": "192.0.2.3",
+      "result": "inconclusive",
+      "packets": 0,
+      "detail": "No counter increase"
+    },
+    { "profile": "Disabled", "result": "skipped", "packets": 0, "detail": "Profile is disabled" }
+  ]
+}

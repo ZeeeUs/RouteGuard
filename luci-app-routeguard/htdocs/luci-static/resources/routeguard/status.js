@@ -107,6 +107,7 @@ function showStatus(parent, data) {
         : _("Scheduled updates are not operational"));
   const job = data.job || {};
   const operations = {
+    diagnose: _("Check profiles"),
     apply: _("Apply settings"),
     refresh: _("Update addresses"),
     restore: _("Restore saved rules"),

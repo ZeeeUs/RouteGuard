@@ -4,6 +4,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"net/netip"
 	"time"
 
 	"github.com/ZeeeUs/RouteGuard/internal/config"
@@ -45,7 +46,12 @@ type Compiler interface {
 	Compile(context.Context, *config.Config) (*policy.Snapshot, error)
 }
 
+type Prober interface {
+	Connect(context.Context, string, netip.Addr) error
+}
+
 type App struct {
+	Prober     Prober
 	Store      StateStore
 	Firewall   Firewall
 	System     System

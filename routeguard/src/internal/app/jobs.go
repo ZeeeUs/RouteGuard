@@ -21,13 +21,14 @@ var ErrBusy = errors.New("RouteGuard is busy")
 var operationID = regexp.MustCompile(`^[a-z0-9]+-[0-9]+$`)
 
 type Operation struct {
-	ID      string `json:"id,omitempty"`
-	PID     int    `json:"pid,omitempty"`
-	Action  string `json:"action,omitempty"`
-	State   string `json:"state,omitempty"`
-	Started string `json:"started,omitempty"`
-	Time    string `json:"time,omitempty"`
-	Message string `json:"message,omitempty"`
+	Diagnostics *DiagnosticReport `json:"diagnostics,omitempty"`
+	ID          string            `json:"id,omitempty"`
+	PID         int               `json:"pid,omitempty"`
+	Action      string            `json:"action,omitempty"`
+	State       string            `json:"state,omitempty"`
+	Started     string            `json:"started,omitempty"`
+	Time        string            `json:"time,omitempty"`
+	Message     string            `json:"message,omitempty"`
 }
 
 func (a *App) lock(wait bool) (*os.File, error) {
@@ -131,7 +132,14 @@ func (a *App) Job(id string) (Operation, error) {
 }
 
 func (a *App) executeJob(ctx context.Context, job Operation) (string, error) {
-	message, operationErr := a.perform(ctx, job.Action)
+	var message string
+	var operationErr error
+	if job.Action == "diagnose" {
+		job.Diagnostics, operationErr = a.diagnose(ctx)
+		message = "Profile checks completed; review individual results"
+	} else {
+		message, operationErr = a.perform(ctx, job.Action)
+	}
 	job.State = "ok"
 	if operationErr != nil {
 		job.State, message = "error", operationErr.Error()

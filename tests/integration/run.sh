@@ -79,6 +79,8 @@ for address in 10.2.0.3 10.2.0.4 fd00:2::3 fd00:2::4; do
   allowed ip netns exec client ping -c 1 -W 1 "$address"
 done
 
+python3 /src/tests/integration/diagnostics.py
+
 routeguard status > /out/before-refresh.json
 routeguard refresh
 routeguard status > /out/after-refresh.json

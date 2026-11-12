@@ -14,7 +14,7 @@
     "write": {
       "uci": ["routeguard"],
       "ubus": {
-        "luci.routeguard": ["apply", "refresh", "rollback"],
+        "luci.routeguard": ["apply", "refresh", "rollback", "diagnose"],
         "uci": ["commit"]
       }
     }

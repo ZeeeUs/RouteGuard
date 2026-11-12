@@ -32,6 +32,7 @@ func main() {
 		Firewall:  platform.Firewall{Commands: runner},
 		System:    platform.System{Commands: runner, NetPath: "/sys/class/net"},
 		Scheduler: platform.Cron{Commands: runner, Path: "/etc/crontabs/root", Program: "/etc/init.d/cron"},
+		Prober:    platform.TCPProbe{},
 		Compiler:  policy.Compiler{Sources: &sources.Client{}},
 		RunPath:   "/var/run/routeguard", Executable: executable,
 	}
@@ -77,7 +78,7 @@ func run(ctx context.Context, engine *app.App, args []string) error {
 			}
 
 			return encoder.Encode(status)
-		case "apply", "refresh", "restore", "rollback", "stop", "recover":
+		case "apply", "refresh", "restore", "rollback", "stop", "recover", "diagnose":
 			message, err := engine.Execute(ctx, args[0])
 			if err == nil {
 				fmt.Println(message)
@@ -87,5 +88,5 @@ func run(ctx context.Context, engine *app.App, args []string) error {
 		}
 	}
 
-	return fmt.Errorf("usage: routeguard {apply|refresh|restore|rollback|status|stop|recover}")
+	return fmt.Errorf("usage: routeguard {apply|refresh|restore|rollback|status|stop|recover|diagnose}")
 }

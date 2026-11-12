@@ -24,9 +24,10 @@ type Plan struct {
 }
 
 type Snapshot struct {
-	Plan         Plan      `json:"plan"`
-	IPv6         string    `json:"ipv6"`
-	Services     []Summary `json:"services"`
-	Updated      string    `json:"updated"`
-	UpdateMinute string    `json:"update_minute,omitempty"`
+	ProbeTargets map[string][]netip.Addr `json:"probe_targets,omitempty"`
+	Plan         Plan                    `json:"plan"`
+	IPv6         string                  `json:"ipv6"`
+	Services     []Summary               `json:"services"`
+	Updated      string                  `json:"updated"`
+	UpdateMinute string                  `json:"update_minute,omitempty"`
 }

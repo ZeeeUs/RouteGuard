@@ -6,7 +6,7 @@
 const commit = rpc.declare({ object: "uci", method: "commit", params: ["config"], reject: true });
 const getJob = rpc.declare({ object: "luci.routeguard", method: "job", params: ["id"] });
 const commands = Object.fromEntries(
-  ["apply", "refresh", "rollback"].map((method) => [
+  ["apply", "refresh", "rollback", "diagnose"].map((method) => [
     method,
     rpc.declare({ object: "luci.routeguard", method }),
   ]),

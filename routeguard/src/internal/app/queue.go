@@ -17,7 +17,7 @@ type Queued struct {
 }
 
 func queuedAction(action string) bool {
-	return action == "apply" || action == "refresh" || action == "rollback"
+	return action == "apply" || action == "refresh" || action == "rollback" || action == "diagnose"
 }
 
 func (a *App) Queue(action string) (Queued, error) {

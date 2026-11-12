@@ -31,12 +31,16 @@ function createSettingsContent(section) {
   o = section.option(
     form.Value,
     "dns",
-    _("DNS server IP address"),
+    _("DNS server"),
     _(
-      "DNS server used to find real IP addresses for domains. Required for domain lists; leave empty for IP-only profiles.",
+      "Select a DNS server or enter a custom IPv4 or IPv6 address. Used to find real IP addresses for domains. Required for domain lists; leave empty for IP-only profiles.",
     ),
   );
+  o.value("1.1.1.1", "Cloudflare (1.1.1.1)");
+  o.value("8.8.8.8", "Google (8.8.8.8)");
+  o.value("9.9.9.9", "Quad9 (9.9.9.9)");
   o.datatype = "ipaddr(1)";
+  o.rmempty = true;
 
   o = section.option(form.ListValue, "ipv6", _("IPv6 mode"));
   o.value("", _("Select an IPv6 mode"));
