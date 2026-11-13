@@ -75,7 +75,7 @@ function createServiceContent(section) {
     "url",
     _("Remote HTTPS domain lists"),
     _(
-      "Use a direct HTTPS link to a text file. On GitHub, copy the Raw link. Use one hostname per line. Optional domain: and full: prefixes are accepted. Tagged entries and include directives are skipped.",
+      "Add up to four direct HTTPS links, one per row. Lists and manual domains are merged automatically; duplicate domains are removed. On GitHub, copy the Raw link. Files must contain one hostname per line; domain: and full: prefixes are accepted. Tagged entries and include directives are skipped.",
     ),
   );
 

@@ -10,6 +10,7 @@ generate:
 test:
 	cd routeguard/src && $(GO) test ./...
 	npm run test:ui
+	python3 -B -m unittest discover -s tests/release
 
 check: test
 	cd routeguard/src && $(GO) vet ./...

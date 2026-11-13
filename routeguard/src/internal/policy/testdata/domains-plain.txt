@@ -1,0 +1,5 @@
+# Plain domain list with overlaps and repeated entries.
+EXAMPLE.ORG.
+api.example.org
+cdn.example.org
+cdn.example.org

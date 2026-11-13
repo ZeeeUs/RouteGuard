@@ -12,10 +12,22 @@ jobs:
   checks:
     uses: ./.github/workflows/check.yml
 
+  matrix:
+    runs-on: ubuntu-24.04
+    outputs:
+      targets: ${{ steps.targets.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: targets
+        run: echo "matrix=$(python3 scripts/release.py matrix)" >> "$GITHUB_OUTPUT"
+
   build:
-    needs: checks
+    needs: [checks, matrix]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.targets) }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -26,33 +38,50 @@ jobs:
           go-version-file: routeguard/src/go.mod
           cache: false
 
-      - name: Test the engine
-        working-directory: routeguard/src
-        env:
-          GOTOOLCHAIN: local
-        run: go test ./...
-
       - name: Install SDK host dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential file gawk gettext libncurses-dev \
             libssl-dev python3 python3-setuptools rsync unzip wget zlib1g-dev zstd
 
-      - name: Build and check both APKs
+      - name: Build and check APKs
         env:
           ROUTEGUARD_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
-        run: sh scripts/build-sdk.sh "$RUNNER_TEMP/openwrt-sdk" "$RUNNER_TEMP/dist" "$ROUTEGUARD_TAG"
+          ROUTEGUARD_ARCH: ${{ matrix.architecture }}
+          GOTOOLCHAIN: local
+        run: sh scripts/build-sdk.sh "$RUNNER_TEMP/openwrt-sdk" "$RUNNER_TEMP/dist" "$ROUTEGUARD_TAG" "$ROUTEGUARD_ARCH"
 
       - uses: actions/upload-artifact@v7
         with:
+          name: openwrt-${{ matrix.architecture }}
+          path: ${{ runner.temp }}/dist/*.apk
+          if-no-files-found: error
+          compression-level: 0
+
+  bundle:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: openwrt-*
+          merge-multiple: true
+          path: dist
+      - name: Verify complete release and generate checksums
+        run: |
+          python3 scripts/check-package-size.py dist
+          python3 scripts/release.py bundle dist
+      - uses: actions/upload-artifact@v7
+        with:
           name: openwrt-release
-          path: ${{ runner.temp }}/dist/
+          path: dist/
           if-no-files-found: error
           compression-level: 0
 
   publish:
     if: github.event_name == 'push'
-    needs: build
+    needs: bundle
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -68,4 +97,4 @@ jobs:
         run: |
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
             --verify-tag --generate-notes --latest \
-            dist/install.sh dist/SHA256SUMS dist/routeguard-aarch64_cortex-a53.apk dist/luci-app-routeguard.apk
+            dist/install.sh dist/SHA256SUMS dist/*.apk

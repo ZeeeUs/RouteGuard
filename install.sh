@@ -19,8 +19,13 @@ target=$(printf '%s\n' "$board" | jsonfilter -e '@.release.target')
 # OpenWrt's package ABI. The installed package architecture is recorded here.
 arch=$(cat /etc/apk/arch) || fail "could not identify the OpenWrt package architecture"
 
-case "$distribution:$version:$target:$arch" in
-  OpenWrt:25.12.*:mediatek/filogic:aarch64_cortex-a53) ;;
+case "$distribution:$version" in
+  OpenWrt:25.12.*) ;;
+  *) fail "unsupported firmware: $distribution $version ($target, $arch)" ;;
+esac
+
+case "$arch" in
+  aarch64_cortex-a53 | aarch64_generic | aarch64_cortex-a72 | aarch64_cortex-a76 | x86_64) ;;
   *) fail "no release build for $distribution $version ($target, $arch)" ;;
 esac
 

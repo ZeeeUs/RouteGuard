@@ -1,0 +1,6 @@
+# Domain list with record prefixes and overlapping entries.
+domain:Example.ORG
+full:API.example.org.
+domain:example.org
+full:metrics.example.org @telemetry
+include:extra

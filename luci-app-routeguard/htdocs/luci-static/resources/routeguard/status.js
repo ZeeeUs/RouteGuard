@@ -137,7 +137,7 @@ function showStatus(parent, data) {
       table(
         [
           _("Profile"),
-          _("Domains"),
+          _("Unique domains"),
           _("IPv4 entries"),
           _("IPv6 entries"),
           _("Skipped list records"),

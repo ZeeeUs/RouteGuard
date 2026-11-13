@@ -4,7 +4,8 @@ set -eu
 # Use only a disposable OpenWrt rootfs container, never an actual router.
 [ -f /.dockerenv ] || exit 1
 . /etc/openwrt_release
-[ "$DISTRIB_RELEASE:$DISTRIB_TARGET" = '25.12.5:mediatek/filogic' ] || exit 1
+case "$DISTRIB_ID:$DISTRIB_RELEASE" in OpenWrt:25.12.*) ;; *) exit 1 ;; esac
+architecture=$(cat /etc/apk/arch)
 mkdir -p /var/run/ubus /var/lock /var/log /tmp/.uci /out
 
 ubusd &
@@ -18,7 +19,7 @@ until ubus list > /dev/null 2>&1; do
   sleep 1
 done
 
-apk add --no-network --allow-untrusted /packages/routeguard-aarch64_cortex-a53.apk /packages/luci-app-routeguard.apk
+apk add --no-network --allow-untrusted "/packages/routeguard-$architecture.apk" /packages/luci-app-routeguard.apk
 test -x /usr/libexec/rpcd/luci.routeguard
 test -x /etc/hotplug.d/iface/95-routeguard
 test -f /lib/upgrade/keep.d/routeguard

@@ -1,0 +1,41 @@
+{
+  "version": "25.12.5",
+  "luci_architecture": "aarch64_cortex-a53",
+  "targets": [
+    {
+      "architecture": "aarch64_cortex-a53",
+      "target": "mediatek",
+      "subtarget": "filogic",
+      "sdk": "openwrt-sdk-25.12.5-mediatek-filogic_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+      "sha256": "ff4a38a397caa2cfe1c39e18f84ddede14878221b3593c3f2c4cfe24e3ec4c25"
+    },
+    {
+      "architecture": "aarch64_generic",
+      "target": "rockchip",
+      "subtarget": "armv8",
+      "sdk": "openwrt-sdk-25.12.5-rockchip-armv8_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+      "sha256": "59194a023968398af64bfa7d8bc3eac322641f6dc9cdbade28a4d9dd41866eba"
+    },
+    {
+      "architecture": "aarch64_cortex-a72",
+      "target": "bcm27xx",
+      "subtarget": "bcm2711",
+      "sdk": "openwrt-sdk-25.12.5-bcm27xx-bcm2711_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+      "sha256": "84c1d213becdb10d138729fa3542729d794f234d54a316c375e82e9ed6c9e83e"
+    },
+    {
+      "architecture": "aarch64_cortex-a76",
+      "target": "bcm27xx",
+      "subtarget": "bcm2712",
+      "sdk": "openwrt-sdk-25.12.5-bcm27xx-bcm2712_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+      "sha256": "c6aab717ce7c27d154c6c63b4dd7acaf4d9d9f58358f10ed6d161e93716119d3"
+    },
+    {
+      "architecture": "x86_64",
+      "target": "x86",
+      "subtarget": "64",
+      "sdk": "openwrt-sdk-25.12.5-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst",
+      "sha256": "0c8df0151a1e88feb7c03d694d61f6a18d51872815b7c811d76e2b77504d5e9c"
+    }
+  ]
+}
