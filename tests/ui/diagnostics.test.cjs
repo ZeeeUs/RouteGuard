@@ -59,6 +59,17 @@ test("one click checks all profiles and presents uncertainty separately from obs
   const output = flatten(root);
   for (const label of ["Drop observed", "Connection succeeded", "Inconclusive", "Not tested"])
     assert.ok(output.includes(label), label);
+
+  const renderedReport = root.children.at(-1).children[0];
+  const rows = renderedReport.children[1].children[0].children[1].children;
+  const colors = ["#198754", "#c62828", "#855b00", "#59636e"];
+  const icons = ["✓", "✕", "?", "—"];
+  for (const [index, row] of rows.entries()) {
+    const badge = row.children[3].children[0];
+    assert.ok(badge.style.includes(`background-color: ${colors[index]}`));
+    assert.equal(badge.children[0].children[0], icons[index]);
+    assert.equal(badge.children[0]["aria-hidden"], "true");
+  }
 });
 test("diagnostic RPC failure is visible and permits retry", async () => {
   const { root, button } = await fixture(async () => {

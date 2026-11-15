@@ -1,5 +1,7 @@
 # Разработка RouteGuard
 
+Русский · [English](DEVELOPMENT.en.md)
+
 ## Границы компонентов
 
 | Каталог в `routeguard/src` | Ответственность                                                                                   |

@@ -8,11 +8,31 @@
 const getStatus = rpc.declare({ object: "luci.routeguard", method: "status" });
 
 function renderReport(report) {
-  const labels = {
-    drop_observed: _("Drop observed"),
-    reachable: _("Connection succeeded"),
-    inconclusive: _("Inconclusive"),
-    skipped: _("Not tested"),
+  const outcomes = {
+    drop_observed: {
+      label: _("Drop observed"),
+      icon: "✓",
+      color: "#198754",
+      background: "rgba(25, 135, 84, 0.12)",
+    },
+    reachable: {
+      label: _("Connection succeeded"),
+      icon: "✕",
+      color: "#c62828",
+      background: "rgba(198, 40, 40, 0.12)",
+    },
+    inconclusive: {
+      label: _("Inconclusive"),
+      icon: "?",
+      color: "#855b00",
+      background: "rgba(185, 128, 0, 0.12)",
+    },
+    skipped: {
+      label: _("Not tested"),
+      icon: "—",
+      color: "#59636e",
+      background: "transparent",
+    },
   };
   const headers = [
     _("Profile"),
@@ -23,18 +43,30 @@ function renderReport(report) {
     _("Details"),
   ];
   const rows = report.checks.map((check) => {
+    const outcome = outcomes[check.result] || outcomes.inconclusive;
+    const result = E(
+      "span",
+      {
+        style: `display: inline-block; padding: 0.2em 0.6em; border-radius: 0.3em; color: #fff; background-color: ${outcome.color}; font-weight: 600`,
+      },
+      [
+        E("span", { "aria-hidden": "true" }, [outcome.icon]),
+        " ",
+        outcomes[check.result] ? outcome.label : check.result,
+      ],
+    );
     const cells = [
       check.profile,
       check.device || "—",
       check.address || "—",
-      labels[check.result] || check.result,
-      check.packets,
+      result,
+      String(check.packets),
       check.detail,
     ];
     return E(
       "tr",
-      { class: "tr" },
-      cells.map((value) => E("td", { class: "td" }, [String(value)])),
+      { class: "tr", style: `background-color: ${outcome.background}` },
+      cells.map((value) => E("td", { class: "td" }, [value])),
     );
   });
   return E("div", {}, [
