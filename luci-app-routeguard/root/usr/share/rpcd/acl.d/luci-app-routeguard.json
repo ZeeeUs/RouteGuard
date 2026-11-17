@@ -2,19 +2,15 @@
   "luci-app-routeguard": {
     "description": "Configure RouteGuard and read its status",
     "read": {
-      "uci": ["routeguard", "network", "wireless", "luci"],
+      "uci": ["routeguard"],
       "ubus": {
-        "luci.routeguard": ["status", "job"],
-        "luci-rpc": ["getBoardJSON", "getHostHints", "getNetworkDevices", "getWirelessDevices"],
-        "network": ["get_proto_handlers"],
-        "network.device": ["status"],
-        "network.interface": ["dump"]
+        "luci.routeguard": ["status", "job", "devices"]
       }
     },
     "write": {
       "uci": ["routeguard"],
       "ubus": {
-        "luci.routeguard": ["apply", "refresh", "rollback", "diagnose"],
+        "luci.routeguard": ["apply", "refresh", "rollback", "restore", "diagnose", "revision"],
         "uci": ["commit"]
       }
     }

@@ -225,6 +225,21 @@ func (mr *MockSystemMockRecorder) Config(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockSystem)(nil).Config), arg0)
 }
 
+// ConfigAtRevision mocks base method.
+func (m *MockSystem) ConfigAtRevision(arg0 context.Context, arg1 string) (*config.Config, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConfigAtRevision", arg0, arg1)
+	ret0, _ := ret[0].(*config.Config)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConfigAtRevision indicates an expected call of ConfigAtRevision.
+func (mr *MockSystemMockRecorder) ConfigAtRevision(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConfigAtRevision", reflect.TypeOf((*MockSystem)(nil).ConfigAtRevision), arg0, arg1)
+}
+
 // DeviceExists mocks base method.
 func (m *MockSystem) DeviceExists(arg0 string) bool {
 	m.ctrl.T.Helper()

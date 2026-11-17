@@ -50,13 +50,13 @@ func TestBusyLockRejectsQueue(t *testing.T) {
 	}
 	defer lock.Close()
 
-	if _, err := a.Queue("apply"); !errors.Is(err, ErrBusy) {
+	if _, err := a.Queue("apply", ""); !errors.Is(err, ErrBusy) {
 		t.Fatalf("queue error: %v", err)
 	}
 }
 
 func TestMain(m *testing.M) {
-	if len(os.Args) == 4 && os.Args[1] == "worker" {
+	if len(os.Args) == 5 && os.Args[1] == "worker" {
 		// Queue starts the same executable with its production argument layout.
 		// Route that child to a normal test so GoMock uses testing.T and cleanup.
 		if err := os.Setenv("ROUTEGUARD_TEST_WORKER", os.Args[2]+":"+os.Args[3]); err != nil {
@@ -79,7 +79,7 @@ func TestWorkerProcess(t *testing.T) {
 	a.scheduler.EXPECT().Check(gomock.Any(), "").Return(nil)
 	a.firewall.EXPECT().Check(gomock.Any(), nil).Return(nft.Health{Matches: true}, nil)
 	a.scheduler.EXPECT().Update(gomock.Any(), "").Return(nil)
-	if err := a.Worker(context.Background(), action, id); err != nil {
+	if err := a.Worker(context.Background(), action, id, ""); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -94,7 +94,7 @@ func TestQueueAcknowledgesAndCompletesActualChild(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	reply, err := a.Queue("apply")
+	reply, err := a.Queue("apply", "")
 	if err != nil || !reply.Queued || reply.ID == "" {
 		t.Fatalf("queue: %+v, %v", reply, err)
 	}

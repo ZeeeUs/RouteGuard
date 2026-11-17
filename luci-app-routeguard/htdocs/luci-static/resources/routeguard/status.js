@@ -53,7 +53,11 @@ function showStatus(parent, data) {
   }
 
   parent.appendChild(
-    E("h4", {}, [data.loaded ? _("Firewall rules are verified") : _("Protection is not verified")]),
+    E("h4", {}, [
+      data.loaded && !data.offload && !data.offload_unknown
+        ? _("Firewall rules are verified")
+        : _("Protection is not verified"),
+    ]),
   );
   parent.appendChild(
     E("p", {}, [
@@ -65,7 +69,7 @@ function showStatus(parent, data) {
   const warnings = [...(data.warnings || [])];
   if (data.reason) warnings.push(data.reason);
   if (data.recovery_pending)
-    warnings.push(_("An interrupted change needs recovery. Use Save & Apply."));
+    warnings.push(_("An interrupted change needs recovery. Use Restore saved rules."));
   if (data.offload)
     warnings.push(_("Flow offloading may bypass filtering. Disable it in firewall settings."));
   if (data.missing_devices?.length)
@@ -76,7 +80,14 @@ function showStatus(parent, data) {
     parent.appendChild(E("p", { class: "alert-message warning" }, [warning]));
 
   group(parent, _("Active protection"), [
-    [_("Firewall rules"), data.loaded ? _("Verified") : _("Not verified")],
+    [
+      _("Firewall rules"),
+      data.loaded
+        ? data.offload || data.offload_unknown
+          ? _("Verified, forwarding protection uncertain")
+          : _("Verified")
+        : _("Not verified"),
+    ],
     [_("Protected uplinks"), data.devices?.join(", ") || "—"],
     [
       _("IPv4 Internet route"),
@@ -105,6 +116,7 @@ function showStatus(parent, data) {
       (schedule.installed && schedule.running && schedule.enabled
         ? _("Every hour at minute %s").format(schedule.minute)
         : _("Scheduled updates are not operational"));
+  if (schedule.error && (!scheduled || data.paused)) updates += " · " + schedule.error;
   const job = data.job || {};
   const operations = {
     diagnose: _("Check profiles"),
@@ -117,6 +129,7 @@ function showStatus(parent, data) {
   };
   const results = {
     ok: _("Successful"),
+    warning: _("Completed with warnings"),
     error: _("Failed"),
     interrupted: _("Interrupted"),
     running: _("Running"),
@@ -219,7 +232,9 @@ return baseclass.extend({
 
     const refresh = button(_("Refresh active addresses"), "refresh");
     const rollback = button(_("Rollback rules"), "rollback");
+    const restore = button(_("Restore saved rules"), "restore");
     rollback.disabled = true;
+    restore.disabled = true;
 
     const update = async () => {
       try {
@@ -227,8 +242,9 @@ return baseclass.extend({
         showStatus(panel, data);
         const unavailable = !data || data.error || typeof data.loaded !== "boolean";
         const busy = readonly || localBusy || data?.busy || unavailable;
-        refresh.disabled = busy || !data?.table_present || data?.paused;
+        refresh.disabled = busy || !data?.restore_available || data?.paused;
         rollback.disabled = busy || !data?.rollback_available;
+        restore.disabled = busy || !data?.restore_available;
       } catch (error) {
         showStatus(panel, { error: error.message });
         buttons.forEach((item) => {
@@ -250,6 +266,8 @@ return baseclass.extend({
       refresh,
       " ",
       rollback,
+      " ",
+      restore,
     ]);
   },
 });

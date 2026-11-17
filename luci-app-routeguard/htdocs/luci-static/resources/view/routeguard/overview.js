@@ -2,9 +2,12 @@
 "require view";
 "require form";
 "require ui";
+"require rpc";
 "require routeguard.form as fields";
 "require routeguard.profiles as profiles";
 "require routeguard.actions as actions";
+
+const listDevices = rpc.declare({ object: "luci.routeguard", method: "devices" });
 
 return view.extend({
   render: async function () {
@@ -17,7 +20,8 @@ return view.extend({
     );
     this.map = map;
 
-    fields.settings(map.section(form.NamedSection, "main", "settings", _("Settings")));
+    const { devices = [] } = await listDevices().catch(() => ({}));
+    fields.settings(map.section(form.NamedSection, "main", "settings", _("Settings")), devices);
 
     const services = map.section(profiles.ProfileSection, "service", _("Protection profiles"));
     services.anonymous = true;

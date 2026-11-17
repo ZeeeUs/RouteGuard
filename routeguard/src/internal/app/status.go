@@ -11,6 +11,7 @@ import (
 
 type Status struct {
 	Loaded            bool                   `json:"loaded"`
+	RestoreAvailable  bool                   `json:"restore_available"`
 	Present           bool                   `json:"table_present"`
 	Reason            string                 `json:"reason,omitempty"`
 	Counters          map[string]nft.Counter `json:"counters"`
@@ -24,6 +25,7 @@ type Status struct {
 	DefaultRoutes     map[string][]string    `json:"default_route_devices"`
 	Missing           []string               `json:"missing_devices"`
 	Services          []policy.Summary       `json:"services"`
+	OffloadUnknown    bool                   `json:"offload_unknown"`
 	Offload           bool                   `json:"offload"`
 	Warnings          []string               `json:"warnings"`
 	Schedule          platform.Schedule      `json:"schedule"`
@@ -48,6 +50,7 @@ func (a *App) Status(ctx context.Context) (Status, error) {
 		return result, err
 	}
 	result.RecoveryPending = pending != nil
+	result.RestoreAvailable = saved.Active != nil || pending != nil
 
 	health, err := a.Firewall.Check(ctx, saved.Active)
 	if err != nil {
@@ -87,6 +90,7 @@ func (a *App) Status(ctx context.Context) (Status, error) {
 
 	result.Offload, err = a.System.Offload(ctx)
 	if err != nil {
+		result.OffloadUnknown = true
 		result.Warnings = append(result.Warnings, fmt.Sprintf("offload check: %s", err))
 	}
 

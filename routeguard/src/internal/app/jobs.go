@@ -70,7 +70,7 @@ func (a *App) Execute(ctx context.Context, action string) (string, error) {
 		return "", err
 	}
 
-	return a.executeJob(ctx, job)
+	return a.executeJob(ctx, job, "")
 }
 
 func newOperation(action string) Operation {
@@ -125,23 +125,36 @@ func (a *App) Job(id string) (Operation, error) {
 	}
 
 	if job.State == "running" && (!busy || current.ID != id) {
-		job.State, job.Message = "interrupted", "Operation was interrupted; retry to recover"
+		// Completion can be published between reading this file and checking the lock.
+		exists, err := store.ReadJSON(filepath.Join(a.RunPath, "jobs", id+".json"), &job)
+		if err != nil || !exists {
+			return job, fmt.Errorf("operation result is unavailable")
+		}
+
+		if job.State == "running" {
+			job.State, job.Message = "interrupted", "Operation was interrupted; retry to recover"
+		}
 	}
 
 	return job, nil
 }
 
-func (a *App) executeJob(ctx context.Context, job Operation) (string, error) {
+func (a *App) executeJob(ctx context.Context, job Operation, revision string) (string, error) {
 	var message string
 	var operationErr error
 	if job.Action == "diagnose" {
 		job.Diagnostics, operationErr = a.diagnose(ctx)
 		message = "Profile checks completed; review individual results"
 	} else {
-		message, operationErr = a.perform(ctx, job.Action)
+		message, operationErr = a.perform(ctx, job.Action, revision)
 	}
 	job.State = "ok"
-	if operationErr != nil {
+	var warning operationWarning
+	switch {
+	case errors.As(operationErr, &warning):
+		job.State, message = "warning", message+"; "+warning.detail
+		operationErr = nil
+	case operationErr != nil:
 		job.State, message = "error", operationErr.Error()
 	}
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/ZeeeUs/RouteGuard/internal/config"
@@ -104,5 +105,34 @@ func TestAtomicWriteRetainsExistingFileOnFailure(t *testing.T) {
 	entries, _ := os.ReadDir(filepath.Dir(path))
 	if len(entries) != 1 {
 		t.Fatal("temporary files leaked")
+	}
+}
+
+func TestOversizedStateAndJournalKeepTheLastReadableVersion(t *testing.T) {
+	files := Files{Path: filepath.Join(t.TempDir(), "state.json")}
+	old := State{Version: Version, Generation: 3}
+	if err := files.Save(old); err != nil {
+		t.Fatal(err)
+	}
+	if err := files.Prepare(old); err != nil {
+		t.Fatal(err)
+	}
+
+	oversized := old
+	oversized.MigrationWarning = strings.Repeat("a", maxJSONBytes)
+	if err := files.Prepare(oversized); err == nil {
+		t.Fatal("wrote oversized journal")
+	}
+	if err := files.Save(oversized); err == nil {
+		t.Fatal("wrote oversized state")
+	}
+
+	saved, _, err := files.Load()
+	if err != nil || !reflect.DeepEqual(saved, old) {
+		t.Fatalf("active file changed: %v", err)
+	}
+	pending, err := files.Pending()
+	if err != nil || pending == nil || !reflect.DeepEqual(*pending, old) {
+		t.Fatalf("journal changed: %v", err)
 	}
 }

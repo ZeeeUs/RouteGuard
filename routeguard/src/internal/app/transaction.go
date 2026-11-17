@@ -61,5 +61,8 @@ func (a *App) recover(ctx context.Context) error {
 		return fmt.Errorf("recovery incomplete; journal retained: %w", err)
 	}
 
-	return a.Scheduler.Update(ctx, schedule(*target))
+	if err := a.Scheduler.Update(ctx, schedule(*target)); err != nil {
+		a.System.Log(context.WithoutCancel(ctx), "recovered firewall rules; cron schedule could not be updated: "+err.Error())
+	}
+	return nil
 }

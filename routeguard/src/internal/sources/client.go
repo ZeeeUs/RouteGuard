@@ -14,14 +14,15 @@ const (
 )
 
 type Client struct {
-	HTTP     *http.Client
-	Resolver *net.Resolver
-	server   netip.Addr
+	PrivateListsPath string
+	HTTP             *http.Client
+	Resolver         *net.Resolver
+	server           netip.Addr
 }
 
 func (c *Client) Domains(ctx context.Context, url string) (DomainSet, int, error) {
 	if c.HTTP == nil {
-		c.HTTP = newHTTPClient()
+		c.HTTP = newHTTPClient(c.PrivateListsPath)
 	}
 
 	return download(ctx, c.HTTP, url)

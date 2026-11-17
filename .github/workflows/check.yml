@@ -13,12 +13,12 @@ jobs:
   unit:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7
         with:
           go-version-file: routeguard/src/go.mod
           cache: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: "lts/*"
           cache: npm
@@ -28,6 +28,10 @@ jobs:
           make generate
           git diff --exit-code -- routeguard/src
           test -z "$(git ls-files --others --exclude-standard -- routeguard/src)"
+      - name: Build the OpenWrt release verifier
+        run: |
+          sh scripts/build-usign.sh "$RUNNER_TEMP/routeguard-usign"
+          echo "$RUNNER_TEMP/routeguard-usign/bin" >> "$GITHUB_PATH"
       - run: make check
       - name: Go race detector and coverage
         working-directory: routeguard/src
@@ -38,14 +42,14 @@ jobs:
   kernel:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7
         with:
           go-version-file: routeguard/src/go.mod
           cache: false
       - run: make integration TARGET_ARCH=amd64
       - run: make resources TARGET_ARCH=amd64
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: always()
         with:
           name: integration-and-resources

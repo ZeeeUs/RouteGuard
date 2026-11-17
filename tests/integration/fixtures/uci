@@ -1,6 +1,13 @@
 #!/bin/sh
-case "$*" in
-  '-q export routeguard') cat /etc/config/routeguard ;;
-  '-q get firewall.@defaults[0].flow_offloading' | '-q get firewall.@defaults[0].flow_offloading_hw') printf '0\n' ;;
-  *) exit 1 ;;
-esac
+
+serve_uci() {
+  case "$*" in
+    '-q export routeguard') cat /etc/config/routeguard ;;
+    '-q get firewall.@defaults[0].flow_offloading' | '-q get firewall.@defaults[0].flow_offloading_hw')
+      printf '0\n'
+      ;;
+    *) return 1 ;;
+  esac
+}
+
+serve_uci "$@"

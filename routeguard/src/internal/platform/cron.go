@@ -113,11 +113,16 @@ func (c Cron) Update(ctx context.Context, minute string) error {
 
 func (c Cron) Status(ctx context.Context, minute string) Schedule {
 	result := Schedule{Minute: minute}
+	data, err := os.ReadFile(c.Path)
 	if minute == "" {
+		if err == nil && editCron(string(data), "") != string(data) {
+			result.Error = "a stale RouteGuard cron entry remains"
+		} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+			result.Error = "cannot read the root crontab: " + err.Error()
+		}
 		return result
 	}
 
-	data, err := os.ReadFile(c.Path)
 	if err == nil {
 		for _, line := range strings.Split(string(data), "\n") {
 			result.Installed = result.Installed || line == minute+cronSuffix

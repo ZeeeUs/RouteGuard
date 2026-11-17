@@ -46,7 +46,7 @@ func TestCompilerMergesRemoteListsAndManualDomains(t *testing.T) {
 			Domains: []string{"Example.org.", "manual.example.org"},
 		}},
 	}
-	result, err := (Compiler{Sources: loader}).Compile(context.Background(), cfg)
+	result, err := (Compiler{Sources: loader}).Compile(context.Background(), cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,7 +75,7 @@ func TestCompilerDoesNotUsePartialListMerge(t *testing.T) {
 		ID: "merged", Enabled: true,
 		URLs: []string{"https://first.example/domains", "https://second.example/domains"},
 	}}
-	result, err := (Compiler{Sources: loader}).Compile(context.Background(), cfg)
+	result, err := (Compiler{Sources: loader}).Compile(context.Background(), cfg, nil)
 	if !errors.Is(err, failure) || result != nil {
 		t.Fatalf("partial merge accepted: %+v, %v", result, err)
 	}

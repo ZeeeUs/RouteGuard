@@ -11,6 +11,8 @@ const source = fs.readFileSync(
   "utf8",
 );
 
+const revision = "a".repeat(64);
+
 function fixture(overrides = {}) {
   const events = [];
   const handlers = {
@@ -18,7 +20,12 @@ function fixture(overrides = {}) {
       assert.equal(config, "routeguard");
       events.push("commit");
     },
-    apply: async () => {
+    revision: async () => {
+      events.push("revision");
+      return { revision };
+    },
+    apply: async (expected) => {
+      assert.equal(expected, revision);
       events.push("queue");
       return { queued: true, id: "request-1" };
     },
@@ -28,7 +35,7 @@ function fixture(overrides = {}) {
     },
     ...overrides,
   };
-  const actions = new Function("baseclass", "rpc", "ui", "_", source)(
+  const actions = new Function("baseclass", "rpc", "ui", "_", "E", source)(
     { extend: (object) => object },
     {
       declare:
@@ -36,8 +43,9 @@ function fixture(overrides = {}) {
         (...args) =>
           handlers[method](...args),
     },
-    { changes: { init: async () => {} } },
+    { addNotification: () => events.push("warning"), changes: { init: async () => {} } },
     (value) => value,
+    (_tag, _attrs, children) => children,
   );
   const map = {
     save: async () => events.push("save"),
@@ -56,7 +64,7 @@ test("Save & Apply saves, commits and waits for its own operation", async () => 
   const { actions, map, events } = fixture();
   const result = await actions.saveAndApply(map);
   assert.equal(result.state, "ok");
-  assert.deepEqual(events, ["save", "commit", "unload", "render", "queue", "result"]);
+  assert.deepEqual(events, ["save", "revision", "commit", "unload", "render", "queue", "result"]);
 });
 
 test("a failed apply leaves the committed section available for another save", async () => {
@@ -111,20 +119,36 @@ test("commit failure never starts firewall work", async () => {
     },
   });
   await assert.rejects(actions.saveAndApply(map), /commit failed/);
-  assert.deepEqual(events, ["save"]);
+  assert.deepEqual(events, ["save", "revision"]);
 });
 
 test("startup refusal and interrupted jobs are shown as failures", async () => {
   const refused = fixture({ apply: async () => ({ queued: false, error: "RouteGuard is busy" }) });
-  await assert.rejects(refused.actions.run("apply"), /busy/);
+  await assert.rejects(refused.actions.run("apply", revision), /busy/);
 
   const interrupted = fixture({
     job: async (id) => ({ id, state: "interrupted", message: "worker stopped" }),
   });
-  await assert.rejects(interrupted.actions.run("apply"), /worker stopped/);
+  await assert.rejects(interrupted.actions.run("apply", revision), /worker stopped/);
 });
 
 test("a different operation cannot satisfy this request", async () => {
   const { actions } = fixture({ job: async () => ({ id: "another-2", state: "ok" }) });
-  await assert.rejects(actions.run("apply"), /unavailable/);
+  await assert.rejects(actions.run("apply", revision), /unavailable/);
+});
+
+test("a revision error leaves the staged configuration uncommitted", async () => {
+  const { actions, map, events } = fixture({
+    revision: async () => ({ error: "cannot read staged configuration" }),
+  });
+  await assert.rejects(actions.saveAndApply(map), /cannot read staged configuration/);
+  assert.deepEqual(events, ["save"]);
+});
+
+test("a schedule warning is displayed as a completed operation", async () => {
+  const { actions, map, events } = fixture({
+    job: async (id) => ({ id, state: "warning", message: "Rules applied; cron offline" }),
+  });
+  assert.equal((await actions.saveAndApply(map)).state, "warning");
+  assert.ok(events.includes("warning"));
 });

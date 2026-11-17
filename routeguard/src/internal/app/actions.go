@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/ZeeeUs/RouteGuard/internal/config"
 	"github.com/ZeeeUs/RouteGuard/internal/policy"
 	"github.com/ZeeeUs/RouteGuard/internal/store"
 )
 
-func (a *App) perform(ctx context.Context, action string) (string, error) {
+func (a *App) perform(ctx context.Context, action, revision string) (string, error) {
 	if action == "stop" {
 		return "RouteGuard stopped", errors.Join(a.Store.Complete(), a.Scheduler.Update(ctx, ""), a.Firewall.Install(ctx, nil))
 	}
@@ -25,6 +26,7 @@ func (a *App) perform(ctx context.Context, action string) (string, error) {
 		return "", err
 	}
 
+	repaired := false
 	switch action {
 	case "restore":
 		return a.restore(ctx, saved, exists)
@@ -37,6 +39,15 @@ func (a *App) perform(ctx context.Context, action string) (string, error) {
 	case "rollback":
 		return a.rollback(ctx, saved)
 	case "refresh":
+		if saved.Active != nil {
+			repaired, err = a.ensureSavedRules(ctx, saved.Active)
+			if err != nil {
+				return "", err
+			}
+			if saved.Paused && repaired {
+				return a.completed(ctx, "Repaired saved rules; address updates remain paused", "", true)
+			}
+		}
 		if saved.Paused || saved.Active == nil {
 			return "Refresh skipped: no active rules or updates paused", nil
 		}
@@ -44,7 +55,11 @@ func (a *App) perform(ctx context.Context, action string) (string, error) {
 
 	cfg := saved.Config
 	if action == "apply" {
-		cfg, err = a.System.Config(ctx)
+		if revision == "" {
+			cfg, err = a.System.Config(ctx)
+		} else {
+			cfg, err = a.System.ConfigAtRevision(ctx, revision)
+		}
 		if err != nil {
 			return "", err
 		}
@@ -54,11 +69,22 @@ func (a *App) perform(ctx context.Context, action string) (string, error) {
 		return "", fmt.Errorf("no applied configuration; use Save & Apply")
 	}
 
-	return a.apply(ctx, saved, cfg)
+	var previous *policy.Snapshot
+	if action == "refresh" {
+		previous = saved.Active
+	}
+	message, err := a.apply(ctx, saved, cfg, previous)
+	if action == "refresh" && repaired && err != nil && message == "" {
+		return "", fmt.Errorf("saved firewall rules restored; address refresh failed: %w", err)
+	}
+	if action == "refresh" && repaired {
+		message = "Repaired saved rules; " + message
+	}
+	return message, err
 }
 
-func (a *App) apply(ctx context.Context, saved store.State, cfg *config.Config) (string, error) {
-	updated, err := a.compile(ctx, cfg)
+func (a *App) apply(ctx context.Context, saved store.State, cfg *config.Config, previous *policy.Snapshot) (string, error) {
+	updated, err := a.compile(ctx, cfg, previous)
 	if err != nil {
 		return "", err
 	}
@@ -75,11 +101,7 @@ func (a *App) apply(ctx context.Context, saved store.State, cfg *config.Config) 
 		return "", err
 	}
 
-	if err := a.Scheduler.Update(ctx, schedule(next)); err != nil {
-		return "", fmt.Errorf("%s; schedule failed: %w", message, err)
-	}
-
-	return message, nil
+	return a.completed(ctx, message, schedule(next), false)
 }
 
 func samePlan(a, b *policy.Snapshot) bool {
@@ -137,7 +159,7 @@ func (a *App) restore(ctx context.Context, saved store.State, exists bool) (stri
 			return "RouteGuard is not configured", nil
 		}
 
-		message, err := a.apply(ctx, saved, cfg)
+		message, err := a.apply(ctx, saved, cfg, nil)
 		if err != nil {
 			return "", fmt.Errorf("enabled configuration has no saved rules; recovery will retry on interface-up, or use Save & Apply: %w", err)
 		}
@@ -153,7 +175,7 @@ func (a *App) restore(ctx context.Context, saved store.State, exists bool) (stri
 		return "", err
 	}
 
-	return "Restored saved rules", a.Scheduler.Update(ctx, schedule(saved))
+	return a.completed(ctx, "Restored saved rules", schedule(saved), saved.Active != nil)
 }
 
 func (a *App) rollback(ctx context.Context, saved store.State) (string, error) {
@@ -167,5 +189,44 @@ func (a *App) rollback(ctx context.Context, saved store.State) (string, error) {
 		return "", err
 	}
 
-	return "Rolled back; scheduled refresh paused until Save & Apply", a.Scheduler.Update(ctx, "")
+	return a.completed(ctx, "Rolled back; scheduled refresh paused until Save & Apply", "", true)
+}
+
+func (a *App) ensureSavedRules(ctx context.Context, active *policy.Snapshot) (bool, error) {
+	health, err := a.Firewall.Check(ctx, active)
+	if err != nil || health.Matches {
+		return false, err
+	}
+
+	if err := a.Firewall.Validate(ctx, active); err != nil {
+		return false, err
+	}
+	if err := a.Firewall.Install(ctx, active); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+type operationWarning struct{ detail string }
+
+func (w operationWarning) Error() string { return w.detail }
+
+func (a *App) completed(ctx context.Context, message, minute string, checkOffload bool) (string, error) {
+	var warnings []string
+	if err := a.Scheduler.Update(ctx, minute); err != nil {
+		warnings = append(warnings, "cron schedule could not be updated: "+err.Error())
+	}
+	if checkOffload {
+		offload, err := a.System.Offload(ctx)
+		switch {
+		case err != nil:
+			warnings = append(warnings, "could not verify flow offloading: "+err.Error())
+		case offload:
+			warnings = append(warnings, "flow offloading is active and can bypass forwarding rules")
+		}
+	}
+	if len(warnings) > 0 {
+		return message, operationWarning{detail: strings.Join(warnings, "; ")}
+	}
+	return message, nil
 }

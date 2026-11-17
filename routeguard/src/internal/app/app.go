@@ -30,6 +30,7 @@ type Firewall interface {
 
 type System interface {
 	Config(context.Context) (*config.Config, error)
+	ConfigAtRevision(context.Context, string) (*config.Config, error)
 	DeviceExists(string) bool
 	Offload(context.Context) (bool, error)
 	Routes(context.Context) (map[string][]string, error)
@@ -43,7 +44,7 @@ type Scheduler interface {
 }
 
 type Compiler interface {
-	Compile(context.Context, *config.Config) (*policy.Snapshot, error)
+	Compile(context.Context, *config.Config, *policy.Snapshot) (*policy.Snapshot, error)
 }
 
 type Prober interface {
@@ -61,7 +62,7 @@ type App struct {
 	Executable string
 }
 
-func (a *App) compile(ctx context.Context, cfg *config.Config) (*policy.Snapshot, error) {
+func (a *App) compile(ctx context.Context, cfg *config.Config, previous *policy.Snapshot) (*policy.Snapshot, error) {
 	if cfg.Settings.Enabled {
 		offload, err := a.System.Offload(ctx)
 		if err != nil {
@@ -82,7 +83,7 @@ func (a *App) compile(ctx context.Context, cfg *config.Config) (*policy.Snapshot
 	collection, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 
-	return a.Compiler.Compile(collection, cfg)
+	return a.Compiler.Compile(collection, cfg, previous)
 }
 
 func schedule(state store.State) string {

@@ -1,28 +1,23 @@
 "use strict";
 "require baseclass";
 "require form";
-"require tools.widgets as widgets";
-
-function createSettingsContent(section) {
+function createSettingsContent(section, devices) {
   let o = section.option(form.Flag, "enabled", _("Block direct connections"));
   o.rmempty = true;
 
   o = section.option(
-    widgets.DeviceSelect,
+    form.DynamicList,
     "wan_device",
     _("Internet uplink devices"),
     _(
       "Select the devices used to connect to the Internet, for example wan or pppoe-wan. You can select several uplinks or enter a device name manually if it is temporarily absent.",
     ),
   );
-  o.multiple = true;
-  o.noaliases = true;
-  o.noinactive = false;
-  o.nocreate = false;
+  for (const device of devices) o.value(device, device);
   o.rmempty = true;
   o.validate = function (section_id, value) {
-    const devices = Array.isArray(value) ? value : value ? [value] : [];
-    if (devices.every((device) => /^[A-Za-z0-9_][A-Za-z0-9_.:-]{0,14}$/.test(device))) {
+    const selected = Array.isArray(value) ? value : value ? [value] : [];
+    if (selected.every((device) => /^[A-Za-z0-9_][A-Za-z0-9_.:-]{0,14}$/.test(device))) {
       return true;
     }
     return _("Enter an outgoing device name, for example wan or pppoe-wan.");

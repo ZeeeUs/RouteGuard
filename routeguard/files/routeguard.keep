@@ -1,2 +1,4 @@
 /etc/routeguard/state.json
 /etc/routeguard/state.json.pending
+/etc/routeguard/private-list-hosts
+/etc/routeguard/release.pub

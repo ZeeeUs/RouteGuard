@@ -63,6 +63,19 @@ A `vMAJOR.MINOR.PATCH` Git tag sets the version for both packages. For example, 
 
 The Go engine is statically linked, and LuCI contains JavaScript and shell assets. The script builds the LuCI host tools, then uses `NO_DEPS=1` for RouteGuard's own packages. The APK dependency declarations still tell `apk` to install firewall4, certificates, and LuCI from the corresponding OpenWrt repositories. The build needs no firmware or kernel module rebuild.
 
+### Release signing
+
+Generate a dedicated `usign` key pair on a trusted machine. Put the contents of the secret key file in the GitHub Actions secret `ROUTEGUARD_SIGNING_KEY`. Keep the private key outside the repository.
+
+```sh
+umask 077
+usign -G -s routeguard-release.sec -p routeguard-release.pub
+```
+
+For a tagged release, the workflow signs `SHA256SUMS`, extracts the public part of the key, and embeds it in the published `install.sh` after verifying the signature. The `SHA256SUMS.sig` signature covers the manifest containing the release tag and APK checksums. Share the SHA-256 of the published `install.sh` over a trusted channel so users can verify it before running it.
+
+Set `ROUTEGUARD_RELEASE_KEY` to the path of an explicitly trusted public key. A key at `/etc/routeguard/release.pub` also takes precedence over the embedded key. For the installer from source or a test artifact, configure one of these keys manually.
+
 ## Testing built APKs
 
 `scripts/check-apk.py` verifies APK architecture, required files, and the engine ELF architecture on each SDK build. `tests/openwrt/run.sh` installs and tests the packages in a container with an official OpenWrt 25.12 root filesystem. It reads `/etc/apk/arch` to select the engine package. The [OpenWrt 25.12.5 test report](results/openwrt-25.12.5.json) records the Filogic run, image checksum, and package sizes.

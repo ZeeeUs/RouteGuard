@@ -35,11 +35,11 @@ ubus call network.interface.wan status
 ip link show
 ```
 
-Disable software and hardware flow offloading in Firewall and apply the change. Offloaded flows can bypass the nftables hooks. RouteGuard refuses to apply rules if fw4 has offloading enabled or an active `fw4 ft` flowtable exists.
+Disable software and hardware flow offloading in Firewall and apply the change. Offloaded flows can bypass the nftables hooks. RouteGuard refuses to apply rules if fw4 has offloading enabled or an active nftables flowtable in any family exists.
 
 Create and enable your profiles, choose the WAN devices, and set the IPv6 mode. Enter a DNS server IP for domains and remote lists. If needed, add the tunnel server IP as an exception. Exceptions apply to every profile and every port on that IP. Update the exception if the server's IP changes.
 
-**Save & Apply** saves the RouteGuard configuration and waits for the corresponding operation. If it fails, LuCI shows the error and RouteGuard keeps the last working rules. **Refresh active addresses** updates the addresses of the applied configuration. To schedule hourly updates, enter a minute in **Hourly update minute** and enable system cron. Leave the field empty for manual updates.
+**Save & Apply** saves the RouteGuard configuration and waits for the corresponding operation. If applying rules fails, LuCI shows the error and RouteGuard keeps the last working rules. If only the cron update fails after the rules are installed, the operation completes with a warning. **Refresh active addresses** updates the addresses of the applied configuration. To schedule hourly updates, enter a minute in **Hourly update minute** and enable system cron. Leave the field empty for manual updates.
 
 ### UCI example
 
@@ -74,9 +74,11 @@ You can paste these links directly into the field. They cover different services
 - A profile takes up to four URLs. Each file can be up to 128 KiB. All enabled profiles together can contain up to 256 unique domains. RouteGuard merges remote lists and manual domains before DNS lookups, ignoring case and trailing dots when removing duplicates. `example.org` and `api.example.org` remain separate names. **Status → Unique domains** shows the count for each profile.
 - RouteGuard verifies HTTPS certificates and rejects redirects. If a source is unreachable, empty, or malformed, the previous rules stay active. External lists can change, so review their entries before applying them.
 
+Remote list URLs are restricted to public IP addresses by default. To permit a trusted internal list, root can add its exact URL hostname and an allowed IP prefix to `/etc/routeguard/private-list-hosts`, for example `lists.example.net 10.0.0.2/32`. HTTPS certificate checks also apply to these sources.
+
 ### DNS and IPv6
 
-- DNS queries go directly to the configured server. DNS errors, synthetic answers from `198.18.0.0/15`, and profiles without usable addresses leave previous rules active. `NXDOMAIN` and successful responses without A or AAAA records count as no address for that hostname.
+- DNS queries go directly to the configured server. DNS errors, synthetic answers from `198.18.0.0/15`, and profiles without usable addresses leave previous rules active. When a refresh gets `NXDOMAIN` or an empty A/AAAA answer, it retains the last known addresses for that hostname and family for up to 24 hours from the first empty answer. The cache is populated by successful address lookups after upgrading.
 - `ipv6=off` leaves IPv6 unfiltered by RouteGuard. `ipv6=selective` enables AAAA lookups and manual IPv6 addresses or CIDRs. Add both outgoing devices if your IPv4 and IPv6 routes use different ones.
 - Clients may get different IPs because of CDNs, geography, resolver choice, or query time. Unlisted IPs and routes through unselected WAN devices can pass. A shared CDN IP can affect other services. RouteGuard filters traffic that goes through this router.
 
@@ -99,7 +101,7 @@ apk del luci-app-routeguard routeguard
 nft list table inet routeguard
 ```
 
-The last command should report that the table is missing. To remove saved state, delete `/etc/routeguard/state.json` and `/etc/routeguard/state.json.pending` if it exists, after stopping the service. RouteGuard manages its own nftables table and its own line in the root crontab. Standard `fw4 reload` and `fw4 restart` use `inet fw4`. A global `nft flush ruleset` also removes RouteGuard rules. Run `routeguard restore` to reload them. See the [fw4 command implementation](https://lxr.openwrt.org/source/firewall4/root/sbin/fw4).
+The last command should report that the table is missing. To remove saved state, delete `/etc/routeguard/state.json` and `/etc/routeguard/state.json.pending` if it exists, after stopping the service. RouteGuard manages its own nftables table and its own line in the root crontab. Standard `fw4 reload` and `fw4 restart` use `inet fw4`. A global `nft flush ruleset` also removes RouteGuard rules. Use **Status → Restore saved rules** or `routeguard restore` to reinstall the local snapshot. If the table disappears, refresh restores the snapshot before contacting address sources. See the [fw4 command implementation](https://lxr.openwrt.org/source/firewall4/root/sbin/fw4).
 
 ## LuCI profiles and status
 

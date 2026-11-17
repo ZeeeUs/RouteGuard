@@ -59,6 +59,21 @@ func TableExists(data []byte) (bool, error) {
 	return false, nil
 }
 
+func HasFlowtable(data []byte) (bool, error) {
+	entries, err := readEntries(data)
+	if err != nil {
+		return false, err
+	}
+
+	for _, entry := range entries {
+		if _, ok := entry["flowtable"]; ok {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func readEntries(data []byte) ([]map[string]json.RawMessage, error) {
 	var document struct {
 		Entries []map[string]json.RawMessage `json:"nftables"`

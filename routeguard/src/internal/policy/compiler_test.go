@@ -36,7 +36,7 @@ func TestCompilerSharesQueriesAndKeepsServiceIDs(t *testing.T) {
 		Return([]netip.Prefix{netip.MustParsePrefix("2606:2800:220:1::1/128")}, nil)
 
 	cfg := testConfig()
-	result, err := (Compiler{Sources: loader}).Compile(context.Background(), cfg)
+	result, err := (Compiler{Sources: loader}).Compile(context.Background(), cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -79,7 +79,7 @@ func TestCompilerFailsWithoutPublishingPartialTargets(t *testing.T) {
 				}
 			}
 
-			result, err := (Compiler{Sources: loader}).Compile(context.Background(), testConfig())
+			result, err := (Compiler{Sources: loader}).Compile(context.Background(), testConfig(), nil)
 			if !errors.Is(err, failure) || result != nil {
 				t.Fatalf("partial compile accepted: %+v, %v", result, err)
 			}
@@ -92,13 +92,13 @@ func TestCompilerManualAndDisabled(t *testing.T) {
 	cfg.Settings.IPv6, cfg.Settings.DNS = "off", ""
 	cfg.Services = []config.Service{{ID: "manual", Enabled: true, IPs: []string{"192.0.2.10", "192.0.2.0/24"}}}
 	compiler := Compiler{Sources: mock.NewMockSources(gomock.NewController(t))}
-	result, err := compiler.Compile(context.Background(), cfg)
+	result, err := compiler.Compile(context.Background(), cfg, nil)
 	if err != nil || len(result.Plan.Targets) != 2 {
 		t.Fatalf("manual compile: %+v, %v", result, err)
 	}
 
 	cfg.Settings.Enabled = false
-	if result, err := compiler.Compile(context.Background(), cfg); err != nil || result != nil {
+	if result, err := compiler.Compile(context.Background(), cfg, nil); err != nil || result != nil {
 		t.Fatalf("disabled compile: %+v, %v", result, err)
 	}
 }
@@ -116,7 +116,7 @@ func TestCompilerValidation(t *testing.T) {
 			cfg := testConfig()
 			cfg.Services = cfg.Services[:1]
 			change(cfg)
-			if _, err := (Compiler{Sources: mock.NewMockSources(gomock.NewController(t))}).Compile(context.Background(), cfg); err == nil {
+			if _, err := (Compiler{Sources: mock.NewMockSources(gomock.NewController(t))}).Compile(context.Background(), cfg, nil); err == nil {
 				t.Fatal("invalid configuration accepted")
 			}
 		})

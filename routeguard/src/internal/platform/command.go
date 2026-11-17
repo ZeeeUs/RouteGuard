@@ -4,7 +4,6 @@ package platform
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -54,8 +53,4 @@ func (Exec) Run(parent context.Context, input, name string, args ...string) ([]b
 	}
 
 	return stdout.Bytes(), nil
-}
-
-func missingObject(err error) bool {
-	return err != nil && strings.Contains(err.Error(), "No such file or directory") && !errors.Is(err, exec.ErrNotFound)
 }

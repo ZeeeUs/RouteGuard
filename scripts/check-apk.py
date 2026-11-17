@@ -29,6 +29,7 @@ def main():
             required = [
                 "usr/libexec/rpcd/luci.routeguard",
                 "usr/share/rpcd/acl.d/luci-app-routeguard.json",
+                "usr/share/routeguard/staged-config.uc",
                 "usr/share/luci/menu.d/luci-app-routeguard.json",
                 "www/luci-static/resources/view/routeguard/overview.js",
             ]

@@ -28,7 +28,7 @@ type collection struct {
 	summaries []Summary
 }
 
-func (c Compiler) Compile(ctx context.Context, cfg *config.Config) (*Snapshot, error) {
+func (c Compiler) Compile(ctx context.Context, cfg *config.Config, previous *Snapshot) (*Snapshot, error) {
 	if !cfg.Settings.Enabled {
 		return nil, nil
 	}
@@ -56,7 +56,18 @@ func (c Compiler) Compile(ctx context.Context, cfg *config.Config) (*Snapshot, e
 		return nil, fmt.Errorf("enable at least one service, or disable RouteGuard globally")
 	}
 
-	if err := c.resolveDomains(ctx, &items, server, cfg.Settings.IPv6 == "selective"); err != nil {
+	now := time.Now
+	if c.Now != nil {
+		now = c.Now
+	}
+	collected := now().UTC()
+
+	var previousDNS *DNSCache
+	if previous != nil {
+		previousDNS = previous.DNSCache
+	}
+	cache, err := c.resolveDomains(ctx, &items, server, cfg.Settings.IPv6 == "selective", previousDNS, collected)
+	if err != nil {
 		return nil, err
 	}
 
@@ -67,17 +78,13 @@ func (c Compiler) Compile(ctx context.Context, cfg *config.Config) (*Snapshot, e
 
 	devices := slices.Clone(cfg.Settings.Devices)
 	slices.Sort(devices)
-	now := time.Now
-	if c.Now != nil {
-		now = c.Now
-	}
-
 	return &Snapshot{
+		DNSCache:     cache,
 		ProbeTargets: items.probeTargets(targets, exempt),
 		Plan:         Plan{Devices: slices.Compact(devices), Targets: targets, Exempt: exempt},
 		IPv6:         cfg.Settings.IPv6,
 		Services:     items.summaries,
-		Updated:      now().UTC().Format(time.RFC3339),
+		Updated:      collected.Format(time.RFC3339),
 		UpdateMinute: minute,
 	}, nil
 }
@@ -150,12 +157,16 @@ func (c Compiler) collectDomains(ctx context.Context, profile config.Service) (s
 	return domains, skipped, nil
 }
 
-func (c Compiler) resolveDomains(ctx context.Context, items *collection, server netip.Addr, ipv6 bool) error {
+func (c Compiler) resolveDomains(ctx context.Context, items *collection, server netip.Addr, ipv6 bool, previous *DNSCache, now time.Time) (*DNSCache, error) {
+	if len(items.domains) == 0 {
+		return nil, nil
+	}
 	names := make([]string, 0, len(items.domains))
 	for name := range items.domains {
 		names = append(names, name)
 	}
 	slices.Sort(names)
+	cache := &DNSCache{Names: names, Addresses: make(map[netip.Prefix][]byte)}
 
 	families := []string{"ip4"}
 	if ipv6 {
@@ -163,22 +174,34 @@ func (c Compiler) resolveDomains(ctx context.Context, items *collection, server 
 	}
 
 	// Sequential queries bound the number of live DNS buffers on small routers.
-	for _, name := range names {
+	for index, name := range names {
 		for _, family := range families {
 			resolved, err := c.Sources.Addresses(ctx, server, name, family)
 			if err != nil {
-				return err
+				return nil, err
+			}
+
+			if len(resolved) == 0 {
+				var since int64
+				resolved, since = previous.lastKnown(name, family, now)
+				if len(resolved) > 0 {
+					if cache.MissingSince == nil {
+						cache.MissingSince = make(map[string]int64)
+					}
+					cache.MissingSince[family+" "+name] = since
+				}
 			}
 
 			for _, prefix := range resolved {
 				if err := items.add(prefix, items.domains[name]); err != nil {
-					return err
+					return nil, err
 				}
+				cache.remember(index, prefix)
 			}
 		}
 	}
 
-	return nil
+	return cache, nil
 }
 
 func (items *collection) add(prefix netip.Prefix, mask uint8) error {

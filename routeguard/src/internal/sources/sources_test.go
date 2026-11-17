@@ -40,7 +40,7 @@ func TestParseSource(t *testing.T) {
 }
 
 func TestDownloadRejectsRedirect(t *testing.T) {
-	client := newHTTPClient()
+	client := newHTTPClient("")
 	transport := mock.NewMockRoundTripper(gomock.NewController(t))
 	client.Transport = transport
 	transport.EXPECT().RoundTrip(gomock.Cond(func(req *http.Request) bool {
@@ -59,7 +59,7 @@ func TestDownloadRejectsRedirect(t *testing.T) {
 }
 
 func TestDownloadRejectsHTMLPage(t *testing.T) {
-	client := newHTTPClient()
+	client := newHTTPClient("")
 	transport := mock.NewMockRoundTripper(gomock.NewController(t))
 	client.Transport = transport
 	transport.EXPECT().RoundTrip(gomock.Any()).Return(&http.Response{

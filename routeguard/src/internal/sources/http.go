@@ -6,16 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"mime"
-	"net"
 	"net/http"
 	"net/url"
 	"time"
 )
 
-func newHTTPClient() *http.Client {
+func newHTTPClient(privateListsPath string) *http.Client {
 	return &http.Client{
 		Transport: &http.Transport{
-			DialContext:            (&net.Dialer{Timeout: 5 * time.Second}).DialContext,
+			DialContext:            listDialer(privateListsPath),
 			DisableKeepAlives:      true,
 			DisableCompression:     true,
 			MaxResponseHeaderBytes: 32 * 1024,

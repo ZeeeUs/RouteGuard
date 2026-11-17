@@ -24,6 +24,7 @@ type Plan struct {
 }
 
 type Snapshot struct {
+	DNSCache     *DNSCache               `json:"dns_cache,omitempty"`
 	ProbeTargets map[string][]netip.Addr `json:"probe_targets,omitempty"`
 	Plan         Plan                    `json:"plan"`
 	IPv6         string                  `json:"ipv6"`

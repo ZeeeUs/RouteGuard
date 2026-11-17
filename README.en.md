@@ -18,13 +18,13 @@ A selective WAN kill switch for OpenWrt. RouteGuard blocks direct connections to
 
 Packages target official OpenWrt 25.12. The installer selects the APK for your package architecture.
 
-Run as root on the router:
+Use the `install.sh` published alongside the APKs for the chosen tag. It includes the RouteGuard public key. Before running it, compare the script's SHA-256 against the value obtained from the publisher over a trusted channel. Then copy the verified file to the router and run it as root with the tag covered by the signed manifest:
 
 ```sh
-sh <(wget -O - https://raw.githubusercontent.com/ZeeeUs/RouteGuard/refs/heads/main/install.sh)
+sh /tmp/install.sh vMAJOR.MINOR.PATCH
 ```
 
-The installer downloads prebuilt APKs from GitHub Releases, verifies their checksums, and installs them.
+Replace `vMAJOR.MINOR.PATCH` with the release tag. The installer verifies the signature on `SHA256SUMS` with OpenWrt's `usign`, then checks the hashes of both APKs before running `apk add --allow-untrusted` for those files. Earlier unsigned releases can still be [installed manually from a trusted build](docs/CONFIGURATION.en.md#manual-installation-and-setup).
 
 With the dependencies already installed, allow **at least 16 MiB free in `/overlay`** and **at least 16 MiB free in `/tmp`**. Check both with `df -h /overlay /tmp`. See [package sizes and dependencies](docs/CONFIGURATION.en.md#free-space).
 

@@ -1,26 +1,43 @@
 #!/bin/sh
 
-case "$1:$2" in
-  list:)
-    printf '%s\n' '{"status":{},"diagnose":{},"apply":{},"refresh":{},"rollback":{},"job":{"id":"String"}}'
-    ;;
-  call:status)
-    exec /usr/sbin/routeguard status
-    ;;
-  call:apply | call:refresh | call:rollback | call:diagnose)
-    exec /usr/sbin/routeguard queue "$2"
-    ;;
-  call:job)
-    . /usr/share/libubox/jshn.sh
-    read -r request
-    json_load "$request" || exit 1
-    json_get_var id id
-    case "$id" in
-      '' | *[!a-z0-9-]*) exit 1 ;;
+list_methods() {
+  printf '%s\n' '{"status":{},"devices":{},"revision":{},"diagnose":{},"apply":{"revision":"String"},"refresh":{},"rollback":{},"restore":{},"job":{"id":"String"}}'
+}
+
+list_devices() {
+  . /usr/share/libubox/jshn.sh
+  json_init
+  json_add_array devices
+
+  for path in /sys/class/net/*; do
+    [ -e "$path" ] || continue
+    device=${path##*/}
+    case "$device" in
+      [!A-Za-z0-9_]* | *[!A-Za-z0-9_.:-]*) continue ;;
     esac
-    exec /usr/sbin/routeguard job "$id"
-    ;;
-  *)
-    exit 1
-    ;;
-esac
+    [ "${#device}" -le 15 ] && json_add_string "" "$device"
+  done
+
+  json_close_array
+  json_dump
+}
+
+read_revision() {
+  /usr/bin/ucode /usr/share/routeguard/staged-config.uc | /usr/sbin/routeguard revision
+}
+
+main() {
+  case "$1:$2" in
+    list:) list_methods ;;
+    call:status) exec /usr/sbin/routeguard status ;;
+    call:devices) list_devices ;;
+    call:refresh | call:rollback | call:restore | call:diagnose)
+      exec /usr/sbin/routeguard queue "$2"
+      ;;
+    call:apply | call:job) exec /usr/sbin/routeguard rpc "$2" ;;
+    call:revision) read_revision ;;
+    *) return 1 ;;
+  esac
+}
+
+main "$@"

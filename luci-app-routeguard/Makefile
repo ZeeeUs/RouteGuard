@@ -4,7 +4,7 @@ PKG_VERSION:=$(or $(ROUTEGUARD_VERSION),0.0.0)
 PKG_RELEASE:=1
 
 LUCI_TITLE:=LuCI for RouteGuard
-LUCI_DEPENDS:=+routeguard +luci-base
+LUCI_DEPENDS:=+routeguard +luci-base +ucode-mod-fs +ucode-mod-ubus
 LUCI_PKGARCH:=all
 PKG_LICENSE:=GPL-2.0-only
 

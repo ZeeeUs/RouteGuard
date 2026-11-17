@@ -18,7 +18,7 @@ func TestProbeTargetsAreBoundedDeterministicAndExcludeExceptions(t *testing.T) {
 			{ID: "cidr", Enabled: true, IPs: []string{"198.51.100.0/24"}},
 		},
 	}
-	result, err := (Compiler{}).Compile(context.Background(), cfg)
+	result, err := (Compiler{}).Compile(context.Background(), cfg, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

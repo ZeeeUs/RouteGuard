@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"syscall"
 	"time"
 )
@@ -17,11 +18,17 @@ type Queued struct {
 }
 
 func queuedAction(action string) bool {
-	return action == "apply" || action == "refresh" || action == "rollback" || action == "diagnose"
+	return action == "apply" || action == "restore" || action == "refresh" || action == "rollback" || action == "diagnose"
 }
 
-func (a *App) Queue(action string) (Queued, error) {
-	if !queuedAction(action) {
+var revisionPattern = regexp.MustCompile(`^[a-f0-9]{64}$`)
+
+func validRequest(action, revision string) bool {
+	return queuedAction(action) && (revision == "" || action == "apply" && revisionPattern.MatchString(revision))
+}
+
+func (a *App) Queue(action, revision string) (Queued, error) {
+	if !validRequest(action, revision) {
 		return Queued{}, fmt.Errorf("invalid queued action")
 	}
 
@@ -39,7 +46,7 @@ func (a *App) Queue(action string) (Queued, error) {
 	defer writer.Close()
 
 	job := newOperation(action)
-	cmd := exec.Command(a.Executable, "worker", action, job.ID)
+	cmd := exec.Command(a.Executable, "worker", action, job.ID, revision)
 	cmd.ExtraFiles = []*os.File{lock, writer}
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 	if err := cmd.Start(); err != nil {
@@ -62,8 +69,8 @@ func (a *App) Queue(action string) (Queued, error) {
 	return Queued{Queued: true, ID: job.ID}, nil
 }
 
-func (a *App) Worker(ctx context.Context, action, id string) error {
-	if !queuedAction(action) || id == "" {
+func (a *App) Worker(ctx context.Context, action, id, revision string) error {
+	if !validRequest(action, revision) || id == "" {
 		return fmt.Errorf("invalid worker request")
 	}
 
@@ -86,6 +93,6 @@ func (a *App) Worker(ctx context.Context, action, id string) error {
 	}
 	ready.Close()
 
-	_, err := a.executeJob(ctx, job)
+	_, err := a.executeJob(ctx, job, revision)
 	return err
 }

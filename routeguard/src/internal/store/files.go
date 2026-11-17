@@ -38,8 +38,17 @@ func ReadJSON(path string, dest any) (bool, error) {
 }
 
 func WriteJSON(path string, value any) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	if len(data) > maxJSONBytes {
+		return fmt.Errorf("state exceeds %d bytes: %s", maxJSONBytes, filepath.Base(path))
+	}
+
 	return AtomicWrite(path, func(file *os.File) error {
-		return json.NewEncoder(file).Encode(value)
+		_, err := file.Write(data)
+		return err
 	})
 }
 

@@ -1,7 +1,12 @@
 #!/bin/sh
-case "$1" in
-  enabled) test -f /tmp/cron-enabled ;;
-  running) test -f /tmp/cron-running ;;
-  start | restart) touch /tmp/cron-running ;;
-  *) exit 1 ;;
-esac
+
+serve_cron() {
+  case "$1" in
+    enabled) test -f /tmp/cron-enabled ;;
+    running) test -f /tmp/cron-running ;;
+    start | restart) touch /tmp/cron-running ;;
+    *) return 1 ;;
+  esac
+}
+
+serve_cron "$@"

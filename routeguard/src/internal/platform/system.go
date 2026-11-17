@@ -3,6 +3,7 @@ package platform
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/ZeeeUs/RouteGuard/internal/config"
+	"github.com/ZeeeUs/RouteGuard/internal/nft"
 )
 
 type System struct {
@@ -24,6 +26,22 @@ func (s System) Config(ctx context.Context) (*config.Config, error) {
 	}
 
 	return config.Parse(out)
+}
+
+func (s System) ConfigAtRevision(ctx context.Context, expected string) (*config.Config, error) {
+	data, err := s.Commands.Run(ctx, "", "ubus", "call", "uci", "get", `{"config":"routeguard"}`)
+	if err != nil {
+		return nil, err
+	}
+	cfg, revision, err := config.ParseRPC(data)
+	if err != nil {
+		return nil, err
+	}
+	if revision != expected {
+		return nil, fmt.Errorf("settings changed after Save & Apply; review the current settings and retry")
+	}
+
+	return cfg, nil
 }
 
 func (s System) DeviceExists(device string) bool {
@@ -49,12 +67,12 @@ func (s System) Offload(ctx context.Context) (bool, error) {
 		}
 	}
 
-	_, err := s.Commands.Run(ctx, "", "nft", "list", "flowtable", "inet", "fw4", "ft")
-	if missingObject(err) {
-		return false, nil
+	out, err := s.Commands.Run(ctx, "", "nft", "-j", "list", "flowtables")
+	if err != nil {
+		return false, err
 	}
 
-	return err == nil, err
+	return nft.HasFlowtable(out)
 }
 
 func (s System) Routes(ctx context.Context) (map[string][]string, error) {

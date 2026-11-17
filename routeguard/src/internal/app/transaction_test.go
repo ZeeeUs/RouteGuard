@@ -91,6 +91,7 @@ func TestRecoveryAtEveryTransactionBoundary(t *testing.T) {
 					restarted.scheduler.EXPECT().Update(gomock.Any(), "").Return(nil),
 				)
 			}
+			restarted.system.EXPECT().Offload(gomock.Any()).Return(false, nil)
 			if _, err := restarted.Execute(context.Background(), "restore"); err != nil {
 				t.Fatal(err)
 			}

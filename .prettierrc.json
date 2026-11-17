@@ -7,7 +7,9 @@
       "files": [
         "routeguard/files/routeguard.init",
         "routeguard/files/routeguard.hotplug",
-        "luci-app-routeguard/root/usr/libexec/rpcd/luci.routeguard"
+        "luci-app-routeguard/root/usr/libexec/rpcd/luci.routeguard",
+        "tests/integration/fixtures/cron",
+        "tests/integration/fixtures/uci"
       ],
       "options": { "parser": "sh" }
     }

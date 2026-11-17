@@ -49,7 +49,11 @@ def measure(name, command):
 budgets = json.loads((ROOT / "tests/resource-budgets.json").read_text())
 report = {
     "measured_utc": datetime.now(timezone.utc).isoformat(),
-    "minimum_go": (ROOT / "routeguard/src/go.mod").read_text().split("go ")[1].strip(),
+    "minimum_go": next(
+        line.split()[1]
+        for line in (ROOT / "routeguard/src/go.mod").read_text().splitlines()
+        if line.startswith("go ")
+    ),
     "platform": platform.platform(),
     "architecture": platform.machine(),
     "nft": subprocess.check_output(["nft", "--version"], text=True).strip(),
