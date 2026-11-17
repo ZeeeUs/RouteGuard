@@ -2,7 +2,10 @@
 
 serve_uci() {
   case "$*" in
-    '-q export routeguard') cat /etc/config/routeguard ;;
+    # Every fixture section is named, so the export modes are equivalent here.
+    '-q export routeguard' | '-q -N export routeguard' | '-q -n export routeguard')
+      cat /etc/config/routeguard
+      ;;
     '-q get firewall.@defaults[0].flow_offloading' | '-q get firewall.@defaults[0].flow_offloading_hw')
       printf '0\n'
       ;;

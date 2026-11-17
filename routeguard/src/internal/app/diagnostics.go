@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/netip"
-	"reflect"
 	"slices"
 	"time"
 
@@ -50,11 +49,11 @@ func (a *App) diagnose(ctx context.Context) (*DiagnosticReport, error) {
 		return nil, fmt.Errorf("recovery or rollback is pending; use Save & Apply first")
 	}
 
-	current, err := a.System.Config(ctx)
+	matches, err := a.System.MatchesConfig(ctx, saved.Config)
 	if err != nil {
 		return nil, err
 	}
-	if !reflect.DeepEqual(current, saved.Config) {
+	if !matches {
 		return nil, fmt.Errorf("settings differ from active rules; use Save & Apply first")
 	}
 

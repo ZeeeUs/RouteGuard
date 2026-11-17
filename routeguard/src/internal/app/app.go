@@ -30,6 +30,7 @@ type Firewall interface {
 
 type System interface {
 	Config(context.Context) (*config.Config, error)
+	MatchesConfig(context.Context, *config.Config) (bool, error)
 	ConfigAtRevision(context.Context, string) (*config.Config, error)
 	DeviceExists(string) bool
 	Offload(context.Context) (bool, error)

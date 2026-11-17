@@ -149,10 +149,13 @@ check_apply_revision() {
   test "${#revision}" -eq 64
   ubus call uci commit "{\"ubus_rpc_session\":\"$editor\",\"config\":\"routeguard\"}"
   check_job ok /out/openwrt-apply.json apply "{\"revision\":\"$revision\"}"
+  check_job ok /out/openwrt-diagnose.json diagnose
 
   uci set 'routeguard.@service[-1].label=Changed fixture'
   uci commit routeguard
   check_job error /out/openwrt-conflict.json apply "{\"revision\":\"$revision\"}"
+  check_job error /out/openwrt-diagnose-conflict.json diagnose
+  jsonfilter -i /out/openwrt-diagnose-conflict.json -e '@.message' | grep -q 'settings differ from active rules'
   test "$(ubus call luci.routeguard status | jsonfilter -e '@.loaded')" = true
 }
 

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 
@@ -20,7 +21,26 @@ type System struct {
 }
 
 func (s System) Config(ctx context.Context) (*config.Config, error) {
-	out, err := s.Commands.Run(ctx, "", "uci", "-q", "export", "routeguard")
+	return s.exportConfig(ctx, "-q", "export", "routeguard")
+}
+
+func (s System) MatchesConfig(ctx context.Context, applied *config.Config) (bool, error) {
+	current, err := s.exportConfig(ctx, "-q", "-N", "export", "routeguard")
+	if err != nil {
+		return false, err
+	}
+	if reflect.DeepEqual(current, applied) {
+		return true, nil
+	}
+
+	// LuCI applies the ubus view with generated section IDs. Older snapshots
+	// can instead have positional IDs from a plain UCI export.
+	named, err := s.exportConfig(ctx, "-q", "-n", "export", "routeguard")
+	return err == nil && reflect.DeepEqual(named, applied), err
+}
+
+func (s System) exportConfig(ctx context.Context, args ...string) (*config.Config, error) {
+	out, err := s.Commands.Run(ctx, "", "uci", args...)
 	if err != nil {
 		return nil, err
 	}

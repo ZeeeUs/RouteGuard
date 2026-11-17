@@ -266,6 +266,21 @@ func (mr *MockSystemMockRecorder) Log(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Log", reflect.TypeOf((*MockSystem)(nil).Log), arg0, arg1)
 }
 
+// MatchesConfig mocks base method.
+func (m *MockSystem) MatchesConfig(arg0 context.Context, arg1 *config.Config) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "MatchesConfig", arg0, arg1)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// MatchesConfig indicates an expected call of MatchesConfig.
+func (mr *MockSystemMockRecorder) MatchesConfig(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MatchesConfig", reflect.TypeOf((*MockSystem)(nil).MatchesConfig), arg0, arg1)
+}
+
 // Offload mocks base method.
 func (m *MockSystem) Offload(arg0 context.Context) (bool, error) {
 	m.ctrl.T.Helper()

@@ -39,7 +39,7 @@ func TestDiagnosticsDistinguishesReachabilityDropsAndUncertainty(t *testing.T) {
 
 			prober := mock.NewMockProber(gomock.NewController(t))
 			a.Prober = prober
-			a.system.EXPECT().Config(gomock.Any()).Return(saved.Config, nil)
+			a.system.EXPECT().MatchesConfig(gomock.Any(), saved.Config).Return(true, nil)
 			a.expectAvailableWAN()
 			health := nft.Health{Matches: true, Counters: map[string]nft.Counter{"output4": {Packets: 10}}}
 			a.firewall.EXPECT().Check(gomock.Any(), active).Return(health, nil).Times(2)
@@ -89,7 +89,7 @@ func TestDiagnosticsRejectsUnappliedConfiguration(t *testing.T) {
 	if err := a.Store.Save(saved); err != nil {
 		t.Fatal(err)
 	}
-	a.system.EXPECT().Config(gomock.Any()).Return(manualConfig("192.0.2.11"), nil)
+	a.system.EXPECT().MatchesConfig(gomock.Any(), saved.Config).Return(false, nil)
 	if _, err := a.diagnose(context.Background()); err == nil {
 		t.Fatal("unapplied configuration tested")
 	}
