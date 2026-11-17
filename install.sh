@@ -4,6 +4,8 @@ set -eu
 release_api=https://api.github.com/repos/ZeeeUs/RouteGuard/releases
 # Filled from the signing key when the release installer is generated.
 embedded_public_key=''
+# Trusted release key for the installer downloaded directly from main.
+source_public_key='RWSUfCh6mMGdvzgroob95sGjtvLjjvIALJoVipTllJojlSVq8rx5T+ft'
 
 fail() {
   printf 'RouteGuard: %s\n' "$*" >&2
@@ -60,9 +62,8 @@ select_verification_key() {
     return
   fi
 
-  [ -n "$embedded_public_key" ] || fail "use the installer from a signed release or provision a trusted public key at $key"
   key=release.pub
-  printf '%s\n' 'untrusted comment: RouteGuard release key' "$embedded_public_key" > "$key"
+  printf '%s\n' 'untrusted comment: RouteGuard release key' "${embedded_public_key:-$source_public_key}" > "$key"
 }
 
 fetch_release() {
